@@ -1,0 +1,9 @@
+.vscode
+generated/*
+config/*
+.venv
+proto_messages/generated*
+native/build
+native/third_party
+wasm/third_party
+wasm/wasm_libraries/nanopb/build
