@@ -47,30 +47,5 @@ void pass_to_native_grpc(wasm_exec_env_t exec_env, uint32_t offset, uint32_t len
     }
 
     std::cout << "Received message! ID = " << msg.id() << ", Name = " << msg.name() << std::endl;
-
-    // // send to a server over grpc
-    // // Parse the incoming bytes into your protobuf message.
-    // std::string data(reinterpret_cast<char*>(memory), length);
-    // MyMessage msg;
-    // if (!msg.ParseFromString(data)) {
-    //     printf("Failed to parse protobuf\n");
-    //     return;
-    // }
-    // std::cout << "Parsed message: id=" << msg.id()
-    //             << ", name=" << msg.name() << std::endl;
-
-    // // Prepare the RPC context and response container.
-    // grpc::ClientContext context;
-    // mypackage::MyResponse reply;
-
-    // // Make the synchronous RPC call.
-    // grpc::Status status = stub_->SendMessage(&context, msg, &reply);
-
-    // if (!status.ok()) {
-    //     std::cerr << "gRPC failed: " << status.error_message() << std::endl;
-    //     return;
-    // }
-    // std::cout << "Server responded: success=" << reply.success()
-    //             << ", info=\"" << reply.info() << "\"" << std::endl;
 }
 
