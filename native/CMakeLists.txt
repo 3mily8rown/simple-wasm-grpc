@@ -61,6 +61,7 @@ target_include_directories(wamrlib PUBLIC
 # ----------------------------------
 # Protobuf & Abseil
 # ----------------------------------
+# if protobuf and abseil are not there, need to run scripts/proto_scripts/setup_proto.sh
 
 add_subdirectory(third_party/abseil-cpp)
 

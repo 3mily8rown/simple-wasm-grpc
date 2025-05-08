@@ -5,9 +5,9 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${DIR}/config/paths.env"
 source "$ENV_FILE"
 
-BUILD_STEP=${1:-all}      # wasm, host, all
-HOST_MODE=${2:-full}      # full, build
-COMPILE_PROTO=${3:-skip} # proto, skip  
+BUILD_STEP=${1:-all}      # wasm, host, all, skip
+HOST_MODE=${2:-full}      # full, build, none
+COMPILE_PROTO=${3:-proto} # proto, skip  
 
 if [[ "$HOST_MODE" == "full" && "$BUILD_STEP" != "wasm" ]]; then
     cd "${NATIVE_DIR}"

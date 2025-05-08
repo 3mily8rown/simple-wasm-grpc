@@ -7,3 +7,4 @@ native/build
 native/third_party
 wasm/third_party
 wasm/wasm_libraries/nanopb/build
+wasm/out/*

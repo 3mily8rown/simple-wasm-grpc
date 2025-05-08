@@ -5,3 +5,11 @@ message MyMessage {
   string name = 2;
 }
 
+service Forwarder {
+  rpc ForwardMessage(MyMessage) returns (Ack) {}
+}
+
+message Ack {
+  bool success = 1;
+  string  info = 2;
+}
