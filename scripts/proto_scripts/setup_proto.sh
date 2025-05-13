@@ -7,6 +7,7 @@ source "$ENV_FILE"
 
 cd "${ROOT_DIR}"
 
+# TODO: seperate the getting the libraries to a separate script to the proto messages?
 echo "##################### Running setup_proto.sh"
 
 # Clone abseil and protobuf if have not already for native side
@@ -29,6 +30,7 @@ if [ ! -d nanopb ]; then
   "./nanopb_build.sh"
 fi
 
+# ----------------- protoc
 cd "${PROTOBUF}"
 mkdir -p build
 cd build
@@ -45,24 +47,7 @@ cmake .. \
 make -j$(nproc) protoc
 PROTOC_BIN=$(pwd)/protoc
 
-cd "$ROOT_DIR"
-
-# Generate proto files with the built protoc
-
-PROTO_FILE="${PROTO_DIR}/message.proto"
-
-OUT_CPP="${PROTO_DIR}/generated_full"
-
-mkdir -p "${OUT_CPP}"
-
-echo "Generating full Protobuf C++ files..."
-$PROTOC_BIN \
-    --proto_path="${PROTO_DIR}" \
-    --cpp_out="${OUT_CPP}" \
-    "${PROTO_FILE}"
-
-
-# Generate the proto files for the wasm modules with the built protoc
+# ------------------Generate the proto files for the wasm modules with the built protoc
 
 # Set up venv if needed
 VENV_DIR="$ROOT_DIR/.venv"

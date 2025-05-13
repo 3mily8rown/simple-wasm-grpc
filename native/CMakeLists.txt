@@ -42,14 +42,21 @@ message(STATUS WAMR_ROOT_DIR ${WAMR_ROOT_DIR})
 set(WAMR_BUILD_PLATFORM "linux")
 set(WAMR_BUILD_TARGET X86_64)
 set(WAMR_BUILD_SPEC_TEST 0)
+
 set(WAMR_BUILD_INTERP 1)   # builds interpreter version not AoT/JIT
+set(WAMR_BUILD_FAST_INTERP 1)
 set(WAMR_BUILD_AOT 0)
 set(WAMR_BUILD_JIT 0)
 set(WAMR_BUILD_LAZY_JIT 0)
 set(WAMR_BUILD_LIBC_BUILTIN 1)
 set(WAMR_BUILD_LIBC_WASI 1)   # WASI support for syscalls
-set(WAMR_BUILD_LIB_PTHREAD 0)
 set(WAMR_BUILD_REF_TYPES 1)
+
+# based on spawn_thread example in WAMR repo - enable thread support
+set(WAMR_BUILD_THREAD_MGR 0) 
+set(WAMR_BUILD_SHARED_MEMORY 1)
+set(WAMR_BUILD_MULTI_MODULE 1)
+set(WAMR_BUILD_LIB_PTHREAD 1)
 
 # builds wamr, creating wamrlib static library and links to public interface of wamrlib
 include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
@@ -71,6 +78,7 @@ target_include_directories(wasm_host PRIVATE
     include/utils
     "${GEN_DIR}"
     "${wamr_ext_SOURCE_DIR}/core/iwasm/include"
+    "${wamr_ext_SOURCE_DIR}/core/shared/platform"
     "${PROTOBUF}/src"
 )
 

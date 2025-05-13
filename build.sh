@@ -6,10 +6,16 @@ ENV_FILE="${DIR}/config/paths.env"
 source "$ENV_FILE"
 
 BUILD_STEP=${1:-all}      # wasm, host, all, skip
-HOST_MODE=${2:-full}      # full, build, none
-COMPILE_PROTO=${3:-proto} # proto, skip  
+HOST_MODE=${2:-debug}      # full, build, debug
+COMPILE_PROTO=${3:-skip} # proto, skip  
 
 if [[ "$HOST_MODE" == "full" && "$BUILD_STEP" != "wasm" ]]; then
+    cd "${NATIVE_DIR}"
+    rm -rf "${BUILD_DIR}" cmake-build-debug CMakeCache.txt CMakeFiles
+    mkdir -p "${WASM_OUT}"
+fi
+
+if [[ "$HOST_MODE" == "debug" && "$BUILD_STEP" != "wasm" ]]; then
     cd "${NATIVE_DIR}"
     rm -rf "${BUILD_DIR}" cmake-build-debug CMakeCache.txt CMakeFiles
     mkdir -p "${WASM_OUT}"
