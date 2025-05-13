@@ -15,6 +15,9 @@ if [[ "$HOST_MODE" == "full" && "$BUILD_STEP" != "wasm" ]]; then
     mkdir -p "${WASM_OUT}"
 fi
 
+"${SCRIPT_DIR}/native_scripts/third_party.sh"
+"${SCRIPT_DIR}/wasm_scripts/third_party.sh"
+
 if [ "$COMPILE_PROTO" = "proto" ]; then
     "${SCRIPT_DIR}/proto_scripts/setup_proto.sh"
 fi
