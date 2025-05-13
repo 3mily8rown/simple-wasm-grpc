@@ -14,7 +14,7 @@
 
 #include "message.pb.h"
 
-#define THREAD_STACK_SIZE (64 * 1024)  /* adjust as needed */
+#define THREAD_STACK_SIZE (64 * 1024)
 
 typedef struct {
   WASMModuleInstanceCommon *module_inst;
@@ -180,26 +180,9 @@ int main() {
       return 1;
     }
 
-    /* waiting for branches */
+    // wait for branches
     pthread_join(tid, NULL);  
     pthread_join(tid2, NULL);  
-    
-    // if (!wasm_runtime_call_wasm(client_exec_env, main, 0, nullptr)) {
-    //   const char* ex = wasm_runtime_get_exception(client_module_inst);
-    //   fprintf(stderr, "main wasm failed: %s\n", ex ? ex : "(null)");
-    // }
-
-    // calling server main function
-    // auto main2 = wasm_runtime_lookup_function(server_module_inst, "_start");
-    // if (!main2) {
-    //   fprintf(stderr, "_start wasm function is not found.\n");
-    //   return 1;
-    // }
-    
-    // if (!wasm_runtime_call_wasm(server_exec_env, main2, 0, nullptr)) {
-    //   const char* ex = wasm_runtime_get_exception(server_module_inst);
-    //   fprintf(stderr, "main wasm failed: %s\n", ex ? ex : "(null)");
-    // }
 
     return 0;
 }
