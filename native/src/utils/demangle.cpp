@@ -10,6 +10,9 @@
 
 #include "demangle.h"
 
+// CURRENTLY NOT USED
+// to use need to uncomment python generate exports section of build_wasm.sh
+
 using ExportMap = std::unordered_map<std::string, WASMFunctionInstanceCommon*>;
 
 static std::unordered_map<wasm_module_inst_t, ExportMap>  exports_map;
