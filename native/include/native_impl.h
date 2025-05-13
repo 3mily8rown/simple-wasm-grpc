@@ -8,6 +8,6 @@
 void pass_to_native(wasm_exec_env_t exec_env, uint32_t offset,
                     uint32_t length);
 
-void pass_to_native_rpc(wasm_exec_env_t exec_env, uint32_t offset,
+void send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset,
     uint32_t length);
     

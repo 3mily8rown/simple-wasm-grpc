@@ -6,7 +6,7 @@
 #include "pb_decode.h"
 #include "message.pb.h"
 
-void pass_to_native_rpc(uint32_t offset, uint32_t length);
+void send_rpcmessage(uint32_t offset, uint32_t length);
 
 struct MessageBuffer {
     uint8_t* ptr;
@@ -34,17 +34,17 @@ MessageBuffer message_to_buffer(const MyMessage msg) {
 void send_message() {
     MyMessage msg = MyMessage_init_default;
     msg.id = 42;
-    strcpy(msg.name, "hello from wasm");
+    strcpy(msg.name, "hello from client");
 
     // nanopb doesnt have .SerializeToString()
     MessageBuffer buf = message_to_buffer(msg);
     if (buf.ptr && buf.size > 0) {
-        pass_to_native_rpc((uint32_t)buf.ptr, buf.size);
+        send_rpcmessage((uint32_t)buf.ptr, buf.size);
     }
 }
 
 int main() {
-    printf("Wasm main function\n");
+    printf("Client main function\n");
     send_message();
     return 0;
 }

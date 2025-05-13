@@ -28,7 +28,7 @@ void pass_to_native(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length) 
     std::cout << "Received message! ID = " << msg.id() << ", Name = " << msg.name() << std::endl;
 }
 
-void pass_to_native_rpc(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length) {
+void send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length) {
     wasm_module_inst_t inst = wasm_runtime_get_module_inst(exec_env);
     uint8_t* memory = static_cast<uint8_t*>(wasm_runtime_addr_app_to_native(inst, offset));
 
