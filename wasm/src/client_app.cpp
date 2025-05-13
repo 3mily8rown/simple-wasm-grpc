@@ -6,7 +6,7 @@
 #include "pb_decode.h"
 #include "message.pb.h"
 
-void pass_to_native_grpc(uint32_t offset, uint32_t length);
+void pass_to_native_rpc(uint32_t offset, uint32_t length);
 
 struct MessageBuffer {
     uint8_t* ptr;
@@ -39,7 +39,7 @@ void send_message() {
     // nanopb doesnt have .SerializeToString()
     MessageBuffer buf = message_to_buffer(msg);
     if (buf.ptr && buf.size > 0) {
-        pass_to_native_grpc((uint32_t)buf.ptr, buf.size);
+        pass_to_native_rpc((uint32_t)buf.ptr, buf.size);
     }
 }
 

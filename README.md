@@ -1,4 +1,4 @@
-# simple-wasm-grpc
+# simple-wasm-rpc
 
 ## Function 
 Wasm client can send a message through a native backend to be received by a server
