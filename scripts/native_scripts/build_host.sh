@@ -19,10 +19,24 @@ fi
 mkdir -p "${OUT_DIR}"
 cd "${OUT_DIR}"
 
+export CFLAGS="-fsanitize=address -g -O1"
+export CXXFLAGS="-fsanitize=address -g -O1"
+
 if [ "${MODE}" = "full" ]; then
     echo "##################### Reconfiguring CMake"
 
     cmake \
+      -DCMAKE_C_COMPILER=/usr/bin/clang \
+      -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+      -DCMAKE_INCLUDE_PATH="${GEN_DIR}" \
+      ..
+fi
+
+if [ "${MODE}" = "debug" ]; then
+    echo "##################### Reconfiguring CMake"
+
+    cmake \
+      -DCMAKE_BUILD_TYPE=Debug \
       -DCMAKE_C_COMPILER=/usr/bin/clang \
       -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
       -DCMAKE_INCLUDE_PATH="${GEN_DIR}" \

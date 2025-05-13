@@ -41,7 +41,8 @@ std::vector<uint8_t> readFileToBytes(const std::string& path)
 
 // read wasm file, load module and create execution environment
 wasm_module_t load_module_minimal(
-  std::vector<uint8_t>& buffer,
+  uint8_t* data,
+  uint32_t size, 
   wasm_module_inst_t& out_inst,
   wasm_exec_env_t& out_env,
   uint32_t stack_size,
@@ -49,7 +50,7 @@ wasm_module_t load_module_minimal(
   char* error_buf,
   size_t error_buf_size) {
 
-  wasm_module_t module = wasm_runtime_load(buffer.data(), buffer.size(), error_buf, error_buf_size);
+  wasm_module_t module = wasm_runtime_load(data, size, error_buf, error_buf_size);
   if (!module) {
     printf("Load wasm module failed. error: %s\n", error_buf);
     return nullptr;

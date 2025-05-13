@@ -6,6 +6,8 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${DIR}/../../config/paths.env"
 source "$ENV_FILE"
 
+STACK_SIZE=${WASM_STACK_SIZE:-262144}
+
 echo "##################### build wasm apps"
 
 mkdir -p "${WASM_OUT}" "${GEN_DIR}"
@@ -32,10 +34,10 @@ do
           "${src}" \
           "${PROTO_DIR}/generated_nano/message.pb.c"
 
-  # generate export list header
-  echo "Generating exports header ${BASE}"
-  python3 "${SCRIPT_DIR}/wasm_scripts/generate_wasm_exports.py" \
-    "${OUT_FILE}" "${GEN_DIR}/${BASE}_exports.h"
+  # # generate export list header
+  # echo "Generating exports header ${BASE}"
+  # python3 "${SCRIPT_DIR}/wasm_scripts/generate_wasm_exports.py" \
+  #   "${OUT_FILE}" "${GEN_DIR}/${BASE}_exports.h"
 
   # generate import
   echo "Generating imports header for ${BASE}"

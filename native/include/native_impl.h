@@ -2,12 +2,12 @@
 #pragma once
 
 #include <cstdint>
-#include <wasm_export.h>   // for wasm_exec_env_t, wasm_module_inst_t, etc.
+#include <wasm_export.h>
 #include <string>
 
-void pass_to_native(wasm_exec_env_t exec_env, uint32_t offset,
+void send_mymessage(wasm_exec_env_t exec_env, uint32_t offset,
                     uint32_t length);
 
-void pass_to_native_grpc(wasm_exec_env_t exec_env, uint32_t offset,
-    uint32_t length);
+int32_t receive_mymessage(wasm_exec_env_t exec_env, uint32_t offset,
+    uint32_t max_length);
     

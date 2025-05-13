@@ -12,7 +12,12 @@ struct WasmBuffer {
   uint32_t length;
 };
 
-WasmBuffer make_wasm_buffer(const google::protobuf::Message& msg,
-                            wasm_module_inst_t module_inst);
+void write_into_buffer(const google::protobuf::Message& msg, wasm_module_inst_t module_inst, WasmBuffer buffer);
+
+WasmBuffer make_wasm_buffer_and_write(const google::protobuf::Message& msg, wasm_module_inst_t module_inst);
+
+WasmBuffer make_wasm_buffer(wasm_module_inst_t module_inst, uint32_t max_length);
+
+WasmBuffer make_wasm_buffer(wasm_module_inst_t module_inst);
 
 #endif 
