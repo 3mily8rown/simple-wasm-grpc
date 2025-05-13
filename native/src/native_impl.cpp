@@ -26,18 +26,6 @@ void send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length)
         return;
     }
 
-    std::string data_str((char*)src, length);
-
-    // TODO remove later (kept now for clarity)
-    MyMessage msg;
-    // MyMessage msg;
-    if (!msg.ParseFromString(data_str)) {
-        printf("Failed to parse protobuf\n");
-        return;
-    }
-    std::cout << "Received message! ID = " << msg.id() << ", Name = " << msg.name() << std::endl;
-    // TODO upto here 
-
     std::vector<uint8_t> data(src, src + length);
     {
         std::lock_guard<std::mutex> lk(g_msg_mutex);
@@ -46,19 +34,7 @@ void send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length)
     g_msg_cv.notify_one();
 }
 
-// TODO make it so the sent is queued then sent to whoever sent this
-// for now this just makes a message and sends it
 int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t max_length) {
-    // example message
-    // MyMessage msg;
-    // msg.set_id(42);
-    // msg.set_name("hello from native");
-
-    // std::string wire;
-    // if (!msg.SerializeToString(&wire)) {
-    //     fprintf(stderr, "Protobuf serialize failed\n");
-    //     return 0;
-    // }
 
     wasm_module_inst_t inst = wasm_runtime_get_module_inst(exec_env);
     uint8_t* dest = static_cast<uint8_t*>(wasm_runtime_addr_app_to_native(inst, offset));
