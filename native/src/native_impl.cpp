@@ -44,6 +44,7 @@ int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t m
     }
 
     // wait until message in queue
+    if (g_msg_queue.empty()) printf("queue empty\n");
     std::unique_lock<std::mutex> lk(g_msg_mutex);
     g_msg_cv.wait(lk, []{ return !g_msg_queue.empty(); });
 
