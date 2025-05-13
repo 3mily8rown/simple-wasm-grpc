@@ -1,6 +1,6 @@
 .vscode
 generated/*
-config/*
+config/paths*
 .venv
 proto_messages/generated*
 native/build
