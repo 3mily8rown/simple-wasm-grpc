@@ -8,17 +8,27 @@
 #include "demangle.h"
 
 #include "client_app_imports.h"
-#include "client_app_exports.h"
+#include "server_app_imports.h"
 
 #include "message.pb.h"
 
-void pass_to_native_grpc(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length);
+static const size_t all_env_native_symbols_count =
+generated_client_app_native_symbols_count +
+generated_server_app_native_symbols_count;
 
-void register_env_symbols() {
+static NativeSymbol all_env_native_symbols[all_env_native_symbols_count];
+
+  void register_all_env_symbols() {
+    size_t out_idx = 0;
+    for (size_t i = 0; i < generated_client_app_native_symbols_count; ++i)
+      all_env_native_symbols[out_idx++] = generated_client_app_native_symbols[i];
+    for (size_t i = 0; i < generated_server_app_native_symbols_count; ++i)
+      all_env_native_symbols[out_idx++] = generated_server_app_native_symbols[i];
+  
     wasm_runtime_register_natives(
       "env",
-      generated_client_app_native_symbols,
-      generated_client_app_native_symbols_count
+      all_env_native_symbols,
+      all_env_native_symbols_count
     );
   }
 
@@ -26,9 +36,16 @@ int main() {
     // setting up wasm module
     wasm_runtime_set_log_level(WASM_LOG_LEVEL_DEBUG);
   
-    wasm_module_t module = nullptr;
-    wasm_module_inst_t module_inst = nullptr;
-    wasm_exec_env_t exec_env = nullptr;
+    // ------------------------------------------ per module
+    wasm_module_t client_module = nullptr;
+    wasm_module_inst_t client_module_inst = nullptr;
+    wasm_exec_env_t client_exec_env = nullptr;
+
+    wasm_module_t server_module = nullptr;
+    wasm_module_inst_t server_module_inst = nullptr;
+    wasm_exec_env_t server_exec_env = nullptr;
+
+    // ------------------------------------------
     char error_buf[128];
     uint32_t buf_size, stack_size = 8092, heap_size = 8092;
   
@@ -48,42 +65,53 @@ int main() {
   
     wasm_runtime_set_log_level(WASM_LOG_LEVEL_VERBOSE);
   
-    register_env_symbols();
+    register_all_env_symbols();
+
+    // ------------------------------------------------------- load each module
   
-    std::string lol = Config::get("ROOT_DIR");
-    printf("%s\n", lol.c_str());
-    std::string wasmPath = Config::get("WASM_OUT") + "/client_app.wasm";
-    auto buffer = readFileToBytes(wasmPath);
+    std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
+    auto client_buffer = readFileToBytes(client_wasm_path);
   
     // load module and create execution environment
-    module = load_module_minimal(buffer, module_inst, exec_env, stack_size, heap_size, error_buf, sizeof(error_buf));
-    if (!module) {
+    client_module = load_module_minimal(client_buffer, client_module_inst, client_exec_env, stack_size, heap_size, error_buf, sizeof(error_buf));
+    if (!client_module) {
       return 1;
     }
+
+    // ----------------
+
+    std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.wasm";
+    auto server_buffer = readFileToBytes(server_wasm_path);
   
-    cache_all_exports(module_inst, CLIENT_APP_EXPORT_NAMES);
-
-    // sending a message from wasm to native using protobuffers
-    auto func1 = get_exported_func("send_message", module_inst);
-    if (!func1) {
-      fprintf(stderr, "send_message wasm function is not found.\n");
+    // load module and create execution environment
+    server_module = load_module_minimal(server_buffer, server_module_inst, server_exec_env, stack_size, heap_size, error_buf, sizeof(error_buf));
+    if (!server_module) {
       return 1;
     }
-    
-    if (!wasm_runtime_call_wasm(exec_env, func1, 0, nullptr)) {
-      const char* ex = wasm_runtime_get_exception(module_inst);
-      fprintf(stderr, "send_message trapped: %s\n", ex ? ex : "(null)");
-    }
 
-    // calling wasm main function
-    auto main = get_exported_func("_start", module_inst);
+    // ----------------------------------------------------------------
+
+    // calling client main function
+    auto main = wasm_runtime_lookup_function(client_module_inst, "_start");
     if (!main) {
-      fprintf(stderr, "main wasm function is not found.\n");
+      fprintf(stderr, "_start wasm function is not found.\n");
       return 1;
     }
     
-    if (!wasm_runtime_call_wasm(exec_env, main, 0, nullptr)) {
-      const char* ex = wasm_runtime_get_exception(module_inst);
+    if (!wasm_runtime_call_wasm(client_exec_env, main, 0, nullptr)) {
+      const char* ex = wasm_runtime_get_exception(client_module_inst);
+      fprintf(stderr, "main wasm failed: %s\n", ex ? ex : "(null)");
+    }
+
+    // calling server main function
+    auto main2 = wasm_runtime_lookup_function(server_module_inst, "_start");
+    if (!main2) {
+      fprintf(stderr, "_start wasm function is not found.\n");
+      return 1;
+    }
+    
+    if (!wasm_runtime_call_wasm(server_exec_env, main2, 0, nullptr)) {
+      const char* ex = wasm_runtime_get_exception(server_module_inst);
       fprintf(stderr, "main wasm failed: %s\n", ex ? ex : "(null)");
     }
 

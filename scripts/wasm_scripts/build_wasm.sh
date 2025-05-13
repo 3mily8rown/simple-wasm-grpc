@@ -32,10 +32,10 @@ do
           "${src}" \
           "${PROTO_DIR}/generated_nano/message.pb.c"
 
-  # generate export list header
-  echo "Generating exports header ${BASE}"
-  python3 "${SCRIPT_DIR}/wasm_scripts/generate_wasm_exports.py" \
-    "${OUT_FILE}" "${GEN_DIR}/${BASE}_exports.h"
+  # # generate export list header
+  # echo "Generating exports header ${BASE}"
+  # python3 "${SCRIPT_DIR}/wasm_scripts/generate_wasm_exports.py" \
+  #   "${OUT_FILE}" "${GEN_DIR}/${BASE}_exports.h"
 
   # generate import
   echo "Generating imports header for ${BASE}"
