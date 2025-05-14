@@ -8,3 +8,6 @@ native/third_party
 wasm/third_party
 wasm/wasm_libraries/nanopb/build
 wasm/out/*
+
+native/src/utils/wasm_context.cpp
+native/include/utils/wasm_context.h

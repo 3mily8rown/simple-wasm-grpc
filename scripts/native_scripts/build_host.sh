@@ -29,6 +29,17 @@ if [ "${MODE}" = "full" ]; then
       ..
 fi
 
+if [ "${MODE}" = "debug" ]; then
+    echo "##################### Reconfiguring CMake"
+    
+    cmake \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_C_COMPILER=/usr/bin/clang \
+      -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+      -DCMAKE_INCLUDE_PATH="${GEN_DIR}" \
+      ..
+fi
+
 echo "Building native host"
 make -j "$(nproc)"
 

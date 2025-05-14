@@ -46,8 +46,10 @@ int main() {
     wasm_module_inst_t server_module_inst = nullptr;
     wasm_exec_env_t server_exec_env = nullptr;
 
-    // ------------------------------------------
+    // ------------------------------------------ wamr overall setup
     char error_buf[128];
+
+    // debugger needs larger stack? Get Native stack overflow error when configured cmake with debug
     uint32_t buf_size, stack_size = 8092, heap_size = 8092;
   
     static char global_heap_buf[512 * 1024];
@@ -92,34 +94,35 @@ int main() {
 
     // ---------------------------------------------------------------- client
 
+    wasm_runtime_set_log_level(WASM_LOG_LEVEL_ERROR);
     // calling client main function
-    auto main_func = wasm_runtime_lookup_function(client_module_inst, "_start");
-    if (!main_func) {
+    auto client_func = wasm_runtime_lookup_function(client_module_inst, "_start");
+    if (!client_func) {
       fprintf(stderr, "_start wasm function is not found.\n");
       return 1;
     }
 
-    pthread_t th;
-    if (!start_wasm_thread(client_module_inst, main_func, &th)) {
+    pthread_t c_th;
+    if (!start_wasm_thread(client_module_inst, client_func, &c_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
 
     // ---------------------------------------------- server
-    auto main_func2 = wasm_runtime_lookup_function(server_module_inst, "_start");
-    if (!main_func2) {
+    auto server_func = wasm_runtime_lookup_function(server_module_inst, "_start");
+    if (!server_func) {
       fprintf(stderr, "_start wasm function is not found.\n");
       return 1;
     }
 
-    pthread_t th2;
-    if (!start_wasm_thread(server_module_inst, main_func2, &th2)) {
+    pthread_t s_th;
+    if (!start_wasm_thread(server_module_inst, server_func, &s_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
 
     // ------------------------------
     // wait for branches
-    pthread_join(th2, nullptr);  
-    pthread_join(th, nullptr);  
+    pthread_join(s_th, nullptr);  
+    pthread_join(c_th, nullptr);  
 
     return 0;
 }
