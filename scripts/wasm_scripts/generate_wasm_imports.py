@@ -5,8 +5,7 @@ import argparse
 
 def parse_types(wasm_path):
     """
-    Build a map: sig_idx -> (args_letters, ret_letter).
-    E.g. for:
+    Builds a map: sig_idx -> (args_letters, ret_letter).
       Type[2] func(i32,i32) -> i32    → {2:("ii","i")}
       Type[0] func(i32,i32,i32)       → {0:("iii","")}
     """
@@ -14,9 +13,9 @@ def parse_types(wasm_path):
     sigs = {}
     tmap = {"i32":"i", "i64":"i", "f32":"f", "f64":"f"}
     type_re = re.compile(
-        r'\s*-\s+type\[(\d+)\]'       # "- type[<idx>]"
-        r'\s*\(\s*([^)]*?)\s*\)'           # " ( i32, i32 )"
-        r'(?:\s*->\s*(\w+))?'           # optional "-> i32" or "-> nil"
+        r'\s*-\s+type\[(\d+)\]'  # "- type[<idx>]"
+        r'\s*\(\s*([^)]*?)\s*\)' # " ( i32, i32 )"
+        r'(?:\s*->\s*(\w+))?' # "-> i32" or "-> nil"
     )
 
     for line in out.splitlines():
@@ -25,7 +24,7 @@ def parse_types(wasm_path):
             continue
         idx       = int(m.group(1))
         params    = [p.strip() for p in m.group(2).split(',')] if m.group(2) else []
-        ret_wasm = m.group(3) or ""      # captures "i32" or "nil"
+        ret_wasm = m.group(3) or "" # captures "i32" or "nil"
         ret_letter = {"i32":"i","i64":"i","f32":"f","f64":"f"}.get(ret_wasm, "")
         # so "nil" → "", "i32" → "i"
         args      = "".join(tmap.get(p, "i") for p in params)

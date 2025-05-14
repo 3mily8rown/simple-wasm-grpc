@@ -5,16 +5,16 @@
 #include "wasm_export.h"  
 
 struct WasmBuffer {
-  uint32_t offset;
-  uint32_t length;
+    uint32_t offset;
+    uint32_t length;
 };
 
 WasmBuffer make_wasm_buffer(const google::protobuf::Message& msg, wasm_module_inst_t module_inst) {
     // Serialize
     std::string wire;
     if (!msg.SerializeToString(&wire)) {
-    fprintf(stderr, "Protobuf serialize failed\n");
-    return {0, 0};
+        fprintf(stderr, "Protobuf serialize failed\n");
+        return {0, 0};
     }
 
     // Allocate in Wasm linear heap
