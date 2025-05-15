@@ -43,6 +43,7 @@ do
   
   python3 "${SCRIPT_DIR}/wasm_scripts/generate_wasm_imports.py" \
       --module "${BASE}" \
+      --native "${NATIVE_RPC}" \
       "${OUT_FILE}" "${GEN_DIR}/${BASE}_imports.h"
 
 done

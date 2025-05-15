@@ -8,7 +8,7 @@
 #include <sstream>
 #include <cstdint>
 
-#include "demangle.h"
+#include "wasm/demangle.h"
 
 // CURRENTLY NOT USED
 // to use need to uncomment python generate exports section of build_wasm.sh

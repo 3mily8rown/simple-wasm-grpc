@@ -68,7 +68,6 @@ add_subdirectory(third_party/abseil-cpp)
 target_include_directories(wasm_host PRIVATE
     "${PROTO_DIR}/generated_full"
     include
-    include/utils
     "${GEN_DIR}"
     "${wamr_ext_SOURCE_DIR}/core/iwasm/include"
     "${PROTOBUF}/src"

@@ -1,8 +1,8 @@
 #include <cstdio>
 #include <cstring>
 
-#include "call_wasm.h"
-#include "thread_launch.h"
+#include "wasm/call_wasm.h"
+#include "wamr/thread_launch.h"
 
 #define THREAD_STACK_SIZE (64 * 1024)
 

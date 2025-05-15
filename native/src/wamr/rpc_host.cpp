@@ -5,10 +5,10 @@
 #include <pthread.h>
 #include <wasm_export.h>
 
-#include "load_module.h"
+#include "wamr/load_module.h"
+#include "wasm/call_wasm.h"
+#include "wamr/thread_launch.h"
 #include "config.h"
-#include "call_wasm.h"
-#include "thread_launch.h"
 
 #include "client_app_imports.h"
 #include "server_app_imports.h"
