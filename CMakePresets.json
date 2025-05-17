@@ -1,0 +1,41 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "clean-build",
+      "configurePreset": "default",
+      "description": "Clean outputs then full rebuild (wasm, native)",
+      "cleanFirst": true,
+      "targets": ["wasm_host", "wasm"],
+      "jobs": 8
+    },
+    {
+      "name": "full",
+      "configurePreset": "default",
+      "description": "full rebuild (wasm, native)",
+      "targets": ["wasm_host", "wasm"],
+      "jobs": 8
+    },
+    {
+      "name": "dev",
+      "configurePreset": "default",
+      "description": "Rebuild just the native host",
+      "targets": [ "wasm_host" ],
+      "jobs": 1
+    },
+    {
+      "name": "run",
+      "configurePreset": "default",
+      "description": "Rebuild just the native host + run wasm_host",
+      "targets": [ "wasm_host", "run_wasm_host" ],
+      "jobs": 1
+    }
+  ]
+}

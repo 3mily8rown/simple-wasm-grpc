@@ -4,11 +4,10 @@
 #include <cmath>
 #include <mutex>
 #include <condition_variable>
+#include <cstring>
 #include <queue>
 #include <vector>
 #include <wasm_export.h>
-
-#include "/home/eb/fyp/my_repos/simple-wasm-grpc/proto_messages/generated_full/message.pb.h"
 
 // guards message queue for push/pop
 static std::mutex g_msg_mutex;
