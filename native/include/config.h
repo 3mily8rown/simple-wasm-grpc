@@ -16,7 +16,6 @@ namespace Config {
     }
 
     // now your project-wide constants (no defaults):
-    // inline const std::string ROOT_DIR = get("ROOT_DIR");
     inline const std::string WASM_OUT = get("WASM_OUT");
 
     
