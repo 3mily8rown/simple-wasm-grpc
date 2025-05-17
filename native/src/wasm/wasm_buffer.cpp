@@ -1,22 +1,11 @@
-#include <google/protobuf/message.h>
 #include <string>
 #include <cstring>
 
 #include "wasm_export.h"  
+#include "wasm/wasm_buffer.h"  
 
-struct WasmBuffer {
-  uint32_t offset;
-  uint32_t length;
-};
-
-WasmBuffer make_wasm_buffer(const google::protobuf::Message& msg, wasm_module_inst_t module_inst) {
-    // Serialize
-    std::string wire;
-    if (!msg.SerializeToString(&wire)) {
-    fprintf(stderr, "Protobuf serialize failed\n");
-    return {0, 0};
-    }
-
+// assumes message is serialised to string, but if bytes or something just swap that in the param
+WasmBuffer make_wasm_buffer(const std::string wire, wasm_module_inst_t module_inst) {
     // Allocate in Wasm linear heap
     void* host_ptr = nullptr;
     uint32_t offset = wasm_runtime_module_malloc(module_inst, wire.size(), &host_ptr);

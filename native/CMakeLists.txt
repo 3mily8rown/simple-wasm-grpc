@@ -2,15 +2,15 @@ cmake_minimum_required(VERSION 3.8)
 
 project(NativeRPC C CXX)
 
-include (FetchContent)
+# --- pull in the folder where the wasm step dropped the stubs ---
+if(NOT DEFINED IMPORTS_DIR)
+  message(FATAL_ERROR "IMPORTS_DIR must be set to your <install>/generated directory")
+endif()
 
-set(PROTO_DIR $ENV{PROTO_DIR})
-set(GEN_DIR $ENV{GEN_DIR})
-set(PROTOBUF $ENV{PROTOBUF})
+include (FetchContent)
 
 file(GLOB_RECURSE SOURCES
      "${CMAKE_SOURCE_DIR}/src/*.cpp"
-     "${PROTO_DIR}/generated_full/*.cc"
 )
 
 # ----------------------------------
@@ -59,18 +59,13 @@ target_include_directories(wamrlib PUBLIC
 )
 
 # ----------------------------------
-# Protobuf & Abseil
+# Targets
 # ----------------------------------
-# if protobuf and abseil are not there, need to run scripts/proto_scripts/setup_proto.sh
-
-add_subdirectory(third_party/abseil-cpp)
 
 target_include_directories(wasm_host PRIVATE
-    "${PROTO_DIR}/generated_full"
-    include
-    "${GEN_DIR}"
+    "${CMAKE_SOURCE_DIR}/include"
     "${wamr_ext_SOURCE_DIR}/core/iwasm/include"
-    "${PROTOBUF}/src"
+    "${IMPORTS_DIR}"
 )
 
 # Link the prebuilt libraries
@@ -79,6 +74,8 @@ target_link_libraries(wasm_host
         pthread
         m
         dl
-        absl::base
-        ${PROTOBUF}/build/libprotobuf.a
 )
+
+install(TARGETS wasm_host
+        RUNTIME DESTINATION bin)
+

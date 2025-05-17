@@ -1,13 +1,5 @@
 .vscode
-generated/*
+build/*
 config/paths*
 .venv
-proto_messages/generated*
-native/build
-native/third_party
-wasm/third_party
-wasm/wasm_libraries/nanopb/build
-wasm/out/*
-
-native/src/utils/wasm_context.cpp
-native/include/utils/wasm_context.h
+host_tools

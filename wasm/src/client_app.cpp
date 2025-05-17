@@ -45,6 +45,7 @@ void send_message() {
 
 int main() {
     printf("Client main function\n");
+    fflush(stdout);
     send_message();
     return 0;
 }
