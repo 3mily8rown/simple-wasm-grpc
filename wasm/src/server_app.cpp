@@ -39,7 +39,6 @@ void receive_message(uint32_t max_length) {
     }
     
     printf("Server recv: \"%s\"\n", msg.name);
-    fflush(stdout);
 
     // TODO send Ack?
 }
@@ -50,7 +49,6 @@ void receive_message() {
 
 int main() {
     printf("Server main function\n");
-    fflush(stdout);
     receive_message();
     return 0;
 }

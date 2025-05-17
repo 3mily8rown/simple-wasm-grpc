@@ -10,7 +10,7 @@ endif()
 include (FetchContent)
 
 file(GLOB_RECURSE SOURCES
-     "${CMAKE_SOURCE_DIR}/src/*.cpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
 # ----------------------------------
@@ -26,18 +26,6 @@ add_executable(wasm_host
 # Add WAMR support
 # ------------------------------
 
-# downloading WAMR
-FetchContent_Declare(
-        wamr_ext
-        GIT_REPOSITORY "https://github.com/bytecodealliance/wasm-micro-runtime"
-        GIT_TAG "4e50d2191ca8f177ad03a9d80eebc44b59a932db"
-)
-FetchContent_MakeAvailable(wamr_ext)
-
-# extracts path downloaded WAMR to
-FetchContent_GetProperties(wamr_ext SOURCE_DIR WAMR_ROOT_DIR)
-message(STATUS WAMR_ROOT_DIR ${WAMR_ROOT_DIR})
-
 # configure which features of WAMR to include
 set(WAMR_BUILD_PLATFORM "linux")
 set(WAMR_BUILD_TARGET X86_64)
@@ -51,6 +39,18 @@ set(WAMR_BUILD_LIBC_WASI 1)   # WASI support for syscalls
 set(WAMR_BUILD_LIB_PTHREAD 0)
 set(WAMR_BUILD_REF_TYPES 1)
 
+# downloading WAMR
+FetchContent_Declare(
+        wamr_ext
+        GIT_REPOSITORY "https://github.com/bytecodealliance/wasm-micro-runtime"
+        GIT_TAG "4e50d2191ca8f177ad03a9d80eebc44b59a932db"
+)
+FetchContent_MakeAvailable(wamr_ext)
+
+# extracts path downloaded WAMR to
+FetchContent_GetProperties(wamr_ext SOURCE_DIR WAMR_ROOT_DIR)
+message(STATUS WAMR_ROOT_DIR ${WAMR_ROOT_DIR})
+
 # builds wamr, creating wamrlib static library and links to public interface of wamrlib
 include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
 add_library(wamrlib "${WAMR_RUNTIME_LIB_SOURCE}")
@@ -63,7 +63,7 @@ target_include_directories(wamrlib PUBLIC
 # ----------------------------------
 
 target_include_directories(wasm_host PRIVATE
-    "${CMAKE_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${wamr_ext_SOURCE_DIR}/core/iwasm/include"
     "${IMPORTS_DIR}"
 )

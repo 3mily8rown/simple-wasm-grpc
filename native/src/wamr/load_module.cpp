@@ -55,8 +55,6 @@ wasm_module_t load_module_minimal(
     return nullptr;
   }
 
-  wasm_runtime_set_wasi_args_ex(module, NULL, 0, NULL, 0, NULL, 0, NULL, 0, fileno(stdin), fileno(stdout), fileno(stderr));
-
   out_inst = wasm_runtime_instantiate(module, stack_size, heap_size, error_buf, error_buf_size);
   if (!out_inst) {
     printf("Instantiate wasm module failed. error: %s\n", error_buf);
