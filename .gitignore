@@ -3,3 +3,5 @@ build/*
 config/paths*
 .venv
 host_tools
+TODO
+native/src/CMakeListsArchive

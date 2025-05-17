@@ -13,7 +13,7 @@
       "configurePreset": "default",
       "description": "Clean outputs then full rebuild (wasm, native)",
       "cleanFirst": true,
-      "targets": ["wasm_host", "wasm"],
+      "targets": ["client_host", "server_host", "rpc_host", "wasm"],
       "jobs": 8
     },
     {
