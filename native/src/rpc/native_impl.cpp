@@ -24,10 +24,10 @@ void send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length)
         return;
     }
     if (g_local_consumer_online.load(std::memory_order_acquire)) {
-        printf("Local consumer is online, sending message...\n");
+        printf("Local server is online, sending message...\n");
         queue_message(src, length);
     } else {
-        printf("Local consumer is offline, sending over socket...\n");
+        printf("Local server is offline, sending over socket...\n");
         send_over_socket(src, length);
     }
     

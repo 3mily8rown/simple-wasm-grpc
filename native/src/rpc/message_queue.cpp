@@ -11,11 +11,6 @@ static std::mutex g_msg_mutex;
 static std::condition_variable g_msg_cv;
 static std::queue<std::vector<uint8_t>> g_msg_queue;
 
-// This function will copy the data into a vector and
-// push it into the queue. It will notify one waiting
-// thread that a message is available.
-// The caller is responsible for ensuring that the data
-// is valid for the duration of the call.
 void queue_message(const uint8_t* data, uint32_t length) {
     std::vector<uint8_t> message(data, data + length);
     {
@@ -26,7 +21,6 @@ void queue_message(const uint8_t* data, uint32_t length) {
 }
 
 // This function will block until a message is available
-// and will copy the message into the provided buffer.
 uint32_t dequeue_message(uint8_t* dest, uint32_t max_length) {
     std::unique_lock<std::mutex> lock(g_msg_mutex);
 
