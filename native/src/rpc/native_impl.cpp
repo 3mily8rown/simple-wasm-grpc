@@ -8,13 +8,12 @@
 #include <queue>
 #include <vector>
 #include <wasm_export.h>
+#include <atomic>
 
-// guards message queue for push/pop
-static std::mutex g_msg_mutex;
-// (only whilst both local) so one thread waits until another signals
-static std::condition_variable g_msg_cv;
-// queue for messages
-static std::queue<std::vector<uint8_t>> g_msg_queue;
+#include "rpc/message_queue.h"
+#include "rpc/socket_communication.h"
+
+std::atomic<bool> g_local_consumer_online = false;
 
 void send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length) {
     wasm_module_inst_t inst = wasm_runtime_get_module_inst(exec_env);
@@ -24,16 +23,19 @@ void send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length)
         printf("Invalid memory address\n");
         return;
     }
-
-    std::vector<uint8_t> data(src, src + length);
-    {
-        std::lock_guard<std::mutex> lk(g_msg_mutex);
-        g_msg_queue.emplace(std::move(data));
+    if (g_local_consumer_online.load(std::memory_order_acquire)) {
+        printf("Local consumer is online, sending message...\n");
+        queue_message(src, length);
+    } else {
+        printf("Local consumer is offline, sending over socket...\n");
+        send_over_socket(src, length);
     }
-    g_msg_cv.notify_one();
+    
 }
 
 int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t max_length) {
+    extern std::atomic<bool> g_local_consumer_online;
+    g_local_consumer_online.store(true, std::memory_order_release);
 
     wasm_module_inst_t inst = wasm_runtime_get_module_inst(exec_env);
     uint8_t* dest = static_cast<uint8_t*>(wasm_runtime_addr_app_to_native(inst, offset));
@@ -42,18 +44,5 @@ int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t m
         return 0;
     }
 
-    // wait until message in queue
-    if (g_msg_queue.empty()) printf("queue empty\n");
-    std::unique_lock<std::mutex> lk(g_msg_mutex);
-    g_msg_cv.wait(lk, []{ return !g_msg_queue.empty(); });
-
-    auto data = std::move(g_msg_queue.front());
-    g_msg_queue.pop();
-    lk.unlock();
-
-    uint32_t to_copy = std::min<uint32_t>(data.size(), max_length);
-    memcpy(dest, data.data(), to_copy);
-    
-    return static_cast<uint32_t>(to_copy);
+    return dequeue_message(dest, max_length);
 }
-

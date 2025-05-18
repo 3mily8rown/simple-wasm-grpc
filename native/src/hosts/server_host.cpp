@@ -8,6 +8,7 @@
 #include "wamr/load_module.h"
 #include "wasm/call_wasm.h"
 #include "wamr/thread_launch.h"
+#include "rpc/socket_communication.h"
 #include "config.h"
 
 #include "server_app_imports.h"
@@ -79,8 +80,22 @@ int main() {
     }
 
     // ------------------------------
+    // start socket listener
+    pthread_t socket_thread;
+    pthread_create(&socket_thread, nullptr, [](void* arg) -> void* {
+        auto* module_inst = static_cast<wasm_module_inst_t>(arg);
+        socket_listener(module_inst, 12345);
+        return nullptr;
+    }, server_module_inst);
+
+    // ----------------------------------
     // wait for branches
     pthread_join(s_th, nullptr);  
+    pthread_join(socket_thread, nullptr);  
+
+    wasm_runtime_deinstantiate(server_module_inst);
+    wasm_runtime_unload(server_module);
+    wasm_runtime_destroy();
 
     return 0;
 }

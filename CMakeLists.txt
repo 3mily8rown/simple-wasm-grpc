@@ -48,12 +48,26 @@ set(CMAKE_HAVE_PTHREADS_CREATE 1)
 add_subdirectory(native)
 
 # ─── run_wasm_host: build-native then invoke the host ───────────────────────
-add_custom_target(run_wasm_host
-  COMMAND ${CMAKE_BINARY_DIR}/install/bin/wasm_host
+add_custom_target(run_rpc_host
+  COMMAND ${CMAKE_BINARY_DIR}/native/rpc_host
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   USES_TERMINAL
   VERBATIM
-  COMMENT "Running wasm_host"
+  COMMENT "Running rpc_host"
+)
+add_custom_target(run_client_host
+  COMMAND ${CMAKE_BINARY_DIR}/native/client_host
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  USES_TERMINAL
+  VERBATIM
+  COMMENT "Running client_host"
+)
+add_custom_target(run_server_host
+  COMMAND ${CMAKE_BINARY_DIR}/native/server_host
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  USES_TERMINAL
+  VERBATIM
+  COMMENT "Running server_host"
 )
 
 
