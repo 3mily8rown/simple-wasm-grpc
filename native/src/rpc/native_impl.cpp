@@ -29,8 +29,7 @@ void send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length)
     } else {
         printf("Local server is offline, sending over socket...\n");
         send_over_socket(src, length);
-    }
-    
+    }    
 }
 
 int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t max_length) {

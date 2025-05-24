@@ -39,6 +39,9 @@ foreach(HOST ${HOST_NAMES})
     dl
   )
 
+  # to ensure generated imports.h is available (can remove if do extern "C" in wasm files)
+  add_dependencies(${HOST}  wasm)
+
   install(TARGETS ${HOST}
     RUNTIME DESTINATION bin
   )

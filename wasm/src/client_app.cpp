@@ -40,6 +40,8 @@ void send_message() {
     MessageBuffer buf = message_to_buffer(msg);
     if (buf.ptr && buf.size > 0) {
         send_rpcmessage((uint32_t)buf.ptr, buf.size);
+    } else {
+        printf("Failed to create message buffer\n");
     }
 }
 

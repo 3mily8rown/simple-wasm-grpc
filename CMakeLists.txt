@@ -25,6 +25,7 @@ ExternalProject_Add(wasm
         -DPROTO_DIR=${CMAKE_SOURCE_DIR}/wasm/proto_messages
         -DIMPORTS_DIR=<INSTALL_DIR>/generated
         -DSCRIPT_DIR=${CMAKE_SOURCE_DIR}/host_tools/scripts
+        -DPIGWEED_DIR=${CMAKE_SOURCE_DIR}/third_party/pigweed
 
   UPDATE_COMMAND ""
   BUILD_ALWAYS 1
