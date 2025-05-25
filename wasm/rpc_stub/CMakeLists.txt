@@ -61,7 +61,22 @@ add_custom_command(
         "${PROTO_DIR}/message.options"
         nano_venv)
 
-add_library(proto_nano STATIC "${GEN}/message.pb.c")
+# generate rpc_envelope.pb.{c,h} ----------
+add_custom_command(
+    OUTPUT  "${GEN}/rpc_envelope.pb.c" "${GEN}/rpc_envelope.pb.h"
+    WORKING_DIRECTORY "${PROTO_DIR}" 
+    COMMAND "${PROTOC_EXECUTABLE}"
+            --plugin=protoc-gen-nanopb=${WRAP}
+            --proto_path="${PROTO_DIR}"
+            --proto_path="${nanopb_SOURCE_DIR}/generator/proto"
+            --nanopb_out="${GEN}"
+            "rpc_envelope.proto"
+    DEPENDS
+        "${PROTO_DIR}/rpc_envelope.proto"
+        "${PROTO_DIR}/rpc_envelope.options"
+        nano_venv)
+
+add_library(proto_nano STATIC "${GEN}/message.pb.c" "${GEN}/rpc_envelope.pb.c")
 target_include_directories(proto_nano PUBLIC "${GEN}" "${nanopb_SOURCE_DIR}")
 target_link_libraries(proto_nano PUBLIC nanopb::nanopb)
 

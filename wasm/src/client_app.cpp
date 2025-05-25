@@ -6,47 +6,64 @@
 #include "pb_decode.h"
 #include "message.pb.h"
 
-void send_rpcmessage(uint32_t offset, uint32_t length);
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include "rpc_envelope.pb.h"
 
-struct MessageBuffer {
-    uint8_t* ptr;
-    uint32_t size;
-};
+extern void send_rpcmessage(uint32_t offset, uint32_t length);
 
-MessageBuffer message_to_buffer(const MyMessage msg) {
-    // Allocate memory inside the WASM module's heap
-    uint32_t size = 128;
-    uint8_t* buffer_ptr = (uint8_t*)malloc(size);
-    if (!buffer_ptr) return {nullptr, 0};
-
-    // Create a Nanopb stream pointing to this WASM memory
-    pb_ostream_t stream = pb_ostream_from_buffer(buffer_ptr, size);
-
-    // Encode into the WASM buffer
-    if (!pb_encode(&stream, MyMessage_fields, &msg)) {
-        printf("Encoding failed: %s\n", PB_GET_ERROR(&stream));
-        return {nullptr, 0}; 
+class RpcClient {
+public:
+    void Send(const char* method, const void* message, const pb_msgdesc_t* fields) {
+    // Encode the payload
+    uint8_t payload_buf[128];
+    pb_ostream_t payload_stream = pb_ostream_from_buffer(payload_buf, sizeof(payload_buf));
+    if (!pb_encode(&payload_stream, fields, message)) {
+        printf("Failed to encode payload: %s\n", PB_GET_ERROR(&payload_stream));
+        return;
     }
 
-    return {buffer_ptr, static_cast<uint32_t>(stream.bytes_written)};
+    size_t payload_len = payload_stream.bytes_written;
+
+    // Create RpcEnvelope
+    RpcEnvelope env = RpcEnvelope_init_zero;
+    strncpy(env.method, method, sizeof(env.method) - 1);
+    memcpy(env.payload.bytes, payload_buf, payload_len);
+    env.payload.size = payload_len;
+
+    // Encode RpcEnvelope
+    uint8_t envelope_buf[256];
+    pb_ostream_t env_stream = pb_ostream_from_buffer(envelope_buf, sizeof(envelope_buf));
+    if (!pb_encode(&env_stream, RpcEnvelope_fields, &env)) {
+        printf("Failed to encode RpcEnvelope: %s\n", PB_GET_ERROR(&env_stream));
+        return;
+    }
+
+    // Allocate message buffer in WASM heap and copy
+    uint8_t* wasm_buf = (uint8_t*)malloc(env_stream.bytes_written);
+    if (!wasm_buf) {
+        printf("Failed to malloc\n");
+        return;
+    }
+
+    memcpy(wasm_buf, envelope_buf, env_stream.bytes_written);
+    send_rpcmessage((uint32_t)wasm_buf, env_stream.bytes_written);
 }
 
-void send_message() {
+};
+
+
+int main() {
+    printf("Client main function\n");
+
+    RpcClient client;
     MyMessage msg = MyMessage_init_default;
     msg.id = 42;
     strcpy(msg.name, "hello from client");
 
-    // nanopb doesnt have .SerializeToString()
-    MessageBuffer buf = message_to_buffer(msg);
-    if (buf.ptr && buf.size > 0) {
-        send_rpcmessage((uint32_t)buf.ptr, buf.size);
-    } else {
-        printf("Failed to create message buffer\n");
-    }
-}
+    client.Send("SendMessage", &msg, MyMessage_fields);
 
-int main() {
-    printf("Client main function\n");
-    send_message();
     return 0;
 }
+

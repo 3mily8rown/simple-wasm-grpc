@@ -6,49 +6,75 @@
 #include "pb_decode.h"
 #include "message.pb.h"
 
-int32_t receive_rpcmessage(uint32_t offset, uint32_t length);
+#include "rpc_envelope.pb.h"
+#include <string.h>
+
+extern int32_t receive_rpcmessage(uint32_t offset, uint32_t length);
 
 struct MessageBuffer {
     uint8_t* ptr;
     uint32_t size;
 };
 
-MessageBuffer receive_message_buffer(uint32_t max_length) {
-    // Allocate memory inside the WASM module's heap
-    uint32_t size = max_length;
-    uint8_t* buffer_ptr = (uint8_t*)malloc(size);
-    if (!buffer_ptr) return {nullptr, 0};
-    return {buffer_ptr, size};
-}
+class RpcServer {
+public:
+    void HandleIncoming() {
+        // Allocate buffer in WASM
+        MessageBuffer buf = receive_buffer(256); // adjustable max size
+        int32_t actual_size = receive_rpcmessage((uint32_t)buf.ptr, buf.size);
+        if (actual_size <= 0) {
+            printf("No message received\n");
+            return;
+        }
 
-void receive_message(uint32_t max_length) {
-    // Make buffer where want to receive message
-    MessageBuffer buf = receive_message_buffer(max_length);
+        // Decode envelope
+        RpcEnvelope envelope = RpcEnvelope_init_zero;
+        pb_istream_t stream = pb_istream_from_buffer(buf.ptr, actual_size);
 
-    int32_t actual_size = receive_rpcmessage((uint32_t)buf.ptr, buf.size);
+        if (!pb_decode(&stream, RpcEnvelope_fields, &envelope)) {
+            printf("Failed to decode RpcEnvelope: %s\n", PB_GET_ERROR(&stream));
+            return;
+        }
 
-    // Turn linear memory into nanopb stream
-    pb_istream_t stream = pb_istream_from_buffer((pb_byte_t*)(uintptr_t)buf.ptr, actual_size);
+        // Now just access the fixed array directly (no .arg!)
+        const char* method = envelope.method;
 
-    // TODO atm this specifically expects MyMessage - can we change that
-    // Decode into nanopb struct:
-    MyMessage msg = MyMessage_init_zero;
-    if (!pb_decode(&stream, MyMessage_fields, &msg)) {
-        printf("Wasm decode failed: %s\n", PB_GET_ERROR(&stream));
-        return;
+        if (strcmp(method, "SendMessage") == 0) {
+            handle_SendMessage(envelope.payload.bytes, envelope.payload.size);
+        } else {        // Handle other methods or unknown method
+            printf("Unknown method: %s\n", method);
+        }
+
+        free(buf.ptr);
     }
-    
-    printf("Server recv: \"%s\"\n", msg.name);
 
-    // TODO send Ack?
-}
+private:
+    MessageBuffer receive_buffer(uint32_t max_length) {
+        uint8_t* buffer_ptr = (uint8_t*)malloc(max_length);
+        if (!buffer_ptr) return {nullptr, 0};
+        return {buffer_ptr, max_length};
+    }
 
-void receive_message() {
-    receive_message((uint32_t)128);
-}
+    void handle_SendMessage(const void* payload_data, size_t payload_size) {
+        MyMessage msg = MyMessage_init_zero;
+        pb_istream_t payload_stream = pb_istream_from_buffer((const pb_byte_t*)payload_data, payload_size);
+        if (!pb_decode(&payload_stream, MyMessage_fields, &msg)) {
+            printf("Failed to decode MyMessage: %s\n", PB_GET_ERROR(&payload_stream));
+            return;
+        }
+
+        printf("[Server] Received msg: id=%d name=\"%s\"\n", msg.id, msg.name);
+
+        // TODO: encode response and return via host
+    }
+};
+
 
 int main() {
     printf("Server main function\n");
-    receive_message();
+
+    RpcServer server;
+    server.HandleIncoming();
+
     return 0;
 }
