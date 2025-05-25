@@ -23,7 +23,14 @@ add_subdirectory(rpc_stub)
 
 # client WASM module -----------------------------------------------
 add_executable(client_app  src/client_app.cpp)
+
+target_include_directories(client_app PRIVATE
+    "${CMAKE_BINARY_DIR}/generated_nano"
+    "${nanopb_SOURCE_DIR}"
+)
 target_link_libraries(client_app PRIVATE rpb_stub_wasm nanopb::nanopb)
+add_dependencies(client_app rpc_stub_wasm)
+
 target_link_options(client_app PRIVATE
     "-Wl,--export-all" "-Wl,--no-gc-sections" "-Wl,--allow-undefined")
 set_target_properties(client_app PROPERTIES SUFFIX ".wasm")
@@ -32,7 +39,14 @@ install(TARGETS client_app DESTINATION wasm)
 
 # server WASM module ------------------------------------------
 add_executable(server_app  src/server_app.cpp)
+
+target_include_directories(server_app PRIVATE
+    "${CMAKE_BINARY_DIR}/generated_nano"
+    "${nanopb_SOURCE_DIR}"
+)
 target_link_libraries(server_app PRIVATE rpb_stub_wasm nanopb::nanopb)
+add_dependencies(server_app rpc_stub_wasm)
+
 target_link_options(server_app PRIVATE
     "-Wl,--export-all" "-Wl,--no-gc-sections" "-Wl,--allow-undefined")
 set_target_properties(server_app PROPERTIES SUFFIX ".wasm")
