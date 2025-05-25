@@ -1,70 +1,113 @@
 cmake_minimum_required(VERSION 3.15)
 project(rpc_stub LANGUAGES C CXX)
 
-# variables supplied by super-builds ----------
-foreach(var PROTOC_EXECUTABLE PROTO_DIR PIGWEED_DIR)
-    if(NOT DEFINED ${var})
-        message(FATAL_ERROR "${var} not set")
-    endif()
+# these variables come from the super-build / wasm root
+foreach(var PROTOC_EXECUTABLE PROTO_DIR VENV PIGWEED_DIR)
+  if(NOT DEFINED ${var})
+    message(FATAL_ERROR "${var} not set")
+  endif()
 endforeach()
 
-# TODO For some reason super build fails if this is here and not in the wasm CMakeLists.txt
-# # Python venv for protoc-gen-nanopb ----------
-# find_package(Python3 REQUIRED COMPONENTS Interpreter)
-# set(VENV "${CMAKE_BINARY_DIR}/nanopb_venv")
-# add_custom_command(
-#     OUTPUT  "${VENV}/.done"
-#     COMMAND "${Python3_EXECUTABLE}" -m venv "${VENV}"
-#     COMMAND "${VENV}/bin/pip" install --upgrade pip protobuf grpcio-tools
-#     COMMAND "${CMAKE_COMMAND}" -E touch "${VENV}/.done")
-# add_custom_target(nano_venv ALL DEPENDS "${VENV}/.done")
-
-# bring in Nanopb (runtime + generator) ----------
+# ─── 1) Fetch only the Nanopb *runtime* ─────────────────────────────────
 include(FetchContent)
-set(nanopb_BUILD_GENERATOR OFF  CACHE BOOL "" FORCE)
+set(nanopb_BUILD_GENERATOR OFF CACHE BOOL "" FORCE)
 set(nanopb_BUILD_RUNTIME   ON  CACHE BOOL "" FORCE)
-
 FetchContent_Declare(
-    nanopb
-    GIT_REPOSITORY https://github.com/nanopb/nanopb.git
-    GIT_TAG        0.4.9
+  nanopb
+  GIT_REPOSITORY https://github.com/nanopb/nanopb.git
+  GIT_TAG        0.4.9
 )
 FetchContent_MakeAvailable(nanopb)
 
-# Create the alias
+# make an ALIAS so the top‐level can just link nanopb::nanopb
 add_library(nanopb::nanopb ALIAS protobuf-nanopb-static)
 
-# Wrapper script so protoc finds the generator in the venv
-set(WRAP "${CMAKE_BINARY_DIR}/protoc-gen-nanopb")
-file(WRITE  "${WRAP}"
-  "#!/usr/bin/env bash\nexec \"${VENV}/bin/python\" \"${nanopb_SOURCE_DIR}/generator/nanopb_generator.py\" --protoc-plugin \"$@\"")
-file(CHMOD "${WRAP}" PERMISSIONS
-     OWNER_READ OWNER_WRITE OWNER_EXECUTE
-     GROUP_READ GROUP_EXECUTE
-     WORLD_READ WORLD_EXECUTE)
 
-# generate message.pb.{c,h} ----------
-set(GEN "${CMAKE_BINARY_DIR}/generated_nano")
-file(MAKE_DIRECTORY "${GEN}")
+# ─── 2) Write the two tiny protoc‐plugin wrappers ───────────────────────
+# nanopb plugin
+set(NANOPB_PLUGIN "${CMAKE_BINARY_DIR}/protoc-gen-nanopb")
+file(WRITE "${NANOPB_PLUGIN}"
+  "#!/usr/bin/env bash\n"
+  "exec \"${VENV}/bin/python\" \"${nanopb_SOURCE_DIR}/generator/nanopb_generator.py\" --protoc-plugin \"\$@\"\n"
+)
+file(CHMOD "${NANOPB_PLUGIN}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 
+# pw_rpc→nanopb plugin
+set(NANOPB_RPC_PLUGIN "${CMAKE_BINARY_DIR}/protoc-gen-nanopb_rpc")
+file(WRITE "${NANOPB_RPC_PLUGIN}"
+  "#!/usr/bin/env bash\n"
+  "export PYTHONPATH=\"${PIGWEED_DIR}/pw_protobuf_compiler/py:\$PYTHONPATH\"\n"
+  "exec \"${VENV}/bin/python\" -m pw_protobuf_compiler.protoc_gen_pwpb_rpc \"\$@\"\n"
+)
+file(CHMOD "${NANOPB_RPC_PLUGIN}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+
+
+# ─── 3) Generate both nanopb and nanopb‐RPC code ────────────────────────
+set(GEN_PB  "${CMAKE_BINARY_DIR}/generated_nano")
+set(GEN_RPC "${CMAKE_BINARY_DIR}/generated_rpc")
+file(MAKE_DIRECTORY "${GEN_PB}" "${GEN_RPC}")
+
+# 3a) nanopb encode/decode
 add_custom_command(
-    OUTPUT  "${GEN}/message.pb.c" "${GEN}/message.pb.h"
-    WORKING_DIRECTORY "${PROTO_DIR}" 
-    COMMAND "${PROTOC_EXECUTABLE}"
-            --plugin=protoc-gen-nanopb=${WRAP}
-            --proto_path="${PROTO_DIR}"
-            --proto_path="${nanopb_SOURCE_DIR}/generator/proto"
-            --nanopb_out="${GEN}"
-            "message.proto"
-    DEPENDS
-        "${PROTO_DIR}/message.proto"
-        "${PROTO_DIR}/message.options"
-        nano_venv)
+  OUTPUT "${GEN_PB}/message.pb.c" "${GEN_PB}/message.pb.h"
+  COMMAND "${PROTOC_EXECUTABLE}"
+          --plugin=protoc-gen-nanopb=${NANOPB_PLUGIN}
+          --nanopb_out=${GEN_PB}
+          --proto_path=${PROTO_DIR}
+          --proto_path=${nanopb_SOURCE_DIR}/generator/proto
+          message.proto
+  DEPENDS "${PROTO_DIR}/message.proto" nano_venv
+)
 
-add_library(proto_nano STATIC "${GEN}/message.pb.c")
-target_include_directories(proto_nano PUBLIC "${GEN}" "${nanopb_SOURCE_DIR}")
-target_link_libraries(proto_nano PUBLIC nanopb::nanopb)
+# 3b) pw_rpc→nanopb stubs (.rpc.pb.c/.h)
+add_custom_command(
+  OUTPUT "${GEN_RPC}/message.rpc.pb.c" "${GEN_RPC}/message.rpc.pb.h"
+  COMMAND "${PROTOC_EXECUTABLE}"
+          --plugin=protoc-gen-nanopb_rpc=${NANOPB_RPC_PLUGIN}
+          --nanopb_rpc_out=${GEN_RPC}
+          --proto_path=${PROTO_DIR}
+          message.proto
+  DEPENDS "${PROTO_DIR}/message.proto" nano_venv
+)
 
-add_library(rpb_stub_wasm STATIC $<TARGET_OBJECTS:proto_nano>)
+# group them into one target so they always run before we build
+add_custom_target(gen_protos ALL
+  DEPENDS
+    "${GEN_PB}/message.pb.c"
+    "${GEN_RPC}/message.rpc.pb.c"
+)
+
+
+# ─── 4) Wrap the generated C-sources as ordinary STATIC libs ────────────
+add_library(proto_nano STATIC "${GEN_PB}/message.pb.c")
+target_include_directories(proto_nano PUBLIC "${GEN_PB}")
+add_dependencies(proto_nano gen_protos)
+
+add_library(rpb_stub_wasm STATIC "${GEN_RPC}/message.rpc.pb.c")
+target_include_directories(rpb_stub_wasm PUBLIC
+  "${GEN_RPC}"
+  "${PIGWEED_DIR}/pw_rpc/public"         # for pw_rpc/channel.h etc.
+  "${PIGWEED_DIR}/pw_bytes/public"       # for span.h
+  "${PIGWEED_DIR}/pw_span/public"
+  "${PIGWEED_DIR}/pw_status/public"
+  "${PIGWEED_DIR}/pw_assert/public"
+  "${PIGWEED_DIR}/pw_assert_backend/public"
+  "${PIGWEED_DIR}/pw_log/basic/public"
+)
+add_dependencies(rpb_stub_wasm gen_protos)
+
+# make proto_nano and rpb_stub_wasm link against the Nanopb runtime
 target_link_libraries(rpb_stub_wasm PUBLIC nanopb::nanopb proto_nano)
-add_library(rpb_stub_wasm ALIAS rpb_stub_wasm)
+
+
+# ─── Done! ──────────────────────────────────────────────────────────────
+# Now your top‐level wasm/CMakeLists.txt just does:
+#
+#   add_subdirectory(rpc_stub)
+#   target_link_libraries(client_app PRIVATE
+#     rpb_stub_wasm
+#     nanopb::nanopb
+#     proto_nano)
+#
+# and everything (venv, protoc, fetch nanopb, build stubs) will
+# automatically happen in the right order.

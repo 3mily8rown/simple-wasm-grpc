@@ -23,7 +23,7 @@ add_subdirectory(rpc_stub)
 
 # client WASM module -----------------------------------------------
 add_executable(client_app  src/client_app.cpp)
-target_link_libraries(client_app PRIVATE rpb_stub_wasm nanopb::nanopb)
+target_link_libraries(client_app PRIVATE rpb_stub_wasm nanopb::nanopb proto_nano)
 target_link_options(client_app PRIVATE
     "-Wl,--export-all" "-Wl,--no-gc-sections" "-Wl,--allow-undefined")
 set_target_properties(client_app PROPERTIES SUFFIX ".wasm")
@@ -32,7 +32,7 @@ install(TARGETS client_app DESTINATION wasm)
 
 # server WASM module ------------------------------------------
 add_executable(server_app  src/server_app.cpp)
-target_link_libraries(server_app PRIVATE rpb_stub_wasm nanopb::nanopb)
+target_link_libraries(server_app PRIVATE rpb_stub_wasm nanopb::nanopb proto_nano)
 target_link_options(server_app PRIVATE
     "-Wl,--export-all" "-Wl,--no-gc-sections" "-Wl,--allow-undefined")
 set_target_properties(server_app PROPERTIES SUFFIX ".wasm")

@@ -1,0 +1,10 @@
+# wasm/proto_messages/BUILD.gn
+
+import("//pw_build/target_types.gni")
+import("//pw_protobuf_compiler/proto.gni")
+
+pw_proto_library("my_rpc_protos") {
+  sources = [ "message.proto" ]
+  # pw_proto_library automatically picks up message.options
+  # and generates both .pb.c/.h and .rpc.pb.c/.h
+}

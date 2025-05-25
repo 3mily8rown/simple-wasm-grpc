@@ -1,5 +1,12 @@
 syntax = "proto3";
 
+import "pw_rpc/nanopb/options.proto";
+
+option (nanopb.rpc) = {
+  // by default this plugin will generate .rpc.pb.h/.c that call
+  // nanopb_pwpb functions under the hood
+};
+
 message MyMessage {
   int32 id   = 1;
   string name = 2;
