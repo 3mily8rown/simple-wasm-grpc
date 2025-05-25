@@ -11,11 +11,11 @@
 #include <string.h>
 #include "rpc_envelope.pb.h"
 
-extern void send_rpcmessage(uint32_t offset, uint32_t length);
+extern void send_rpcmessage(uint32_t offset, uint32_t length, uint32_t request_id);
 
 class RpcClient {
 public:
-    void Send(const char* method, const void* message, const pb_msgdesc_t* fields) {
+    void Send(const char* method, const void* message, const pb_msgdesc_t* fields, uint32_t request_id) {
     // Encode the payload
     uint8_t payload_buf[128];
     pb_ostream_t payload_stream = pb_ostream_from_buffer(payload_buf, sizeof(payload_buf));
@@ -48,7 +48,7 @@ public:
     }
 
     memcpy(wasm_buf, envelope_buf, env_stream.bytes_written);
-    send_rpcmessage((uint32_t)wasm_buf, env_stream.bytes_written);
+    send_rpcmessage((uint32_t)wasm_buf, env_stream.bytes_written, request_id);
 }
 
 };
@@ -62,7 +62,7 @@ int main() {
     msg.id = 42;
     strcpy(msg.name, "hello from client");
 
-    client.Send("SendMessage", &msg, MyMessage_fields);
+    client.Send("SendMessage", &msg, MyMessage_fields, msg.id);
 
     return 0;
 }

@@ -10,6 +10,8 @@
 #include <string.h>
 
 extern int32_t receive_rpcmessage(uint32_t offset, uint32_t length);
+extern void send_rpcresponse(uint32_t offset, uint32_t length, uint32_t request_id);
+
 
 struct MessageBuffer {
     uint8_t* ptr;
@@ -40,13 +42,51 @@ public:
         const char* method = envelope.method;
 
         if (strcmp(method, "SendMessage") == 0) {
-            handle_SendMessage(envelope.payload.bytes, envelope.payload.size);
+            handle_SendMessage(request_id, envelope.payload.bytes, envelope.payload.size);
         } else {        // Handle other methods or unknown method
             printf("Unknown method: %s\n", method);
         }
 
         free(buf.ptr);
     }
+
+    void send_ack_response(uint32_t request_id, const Ack& ack) {
+        // Encode Ack payload
+        uint8_t payload_buf[128];
+        pb_ostream_t payload_stream = pb_ostream_from_buffer(payload_buf, sizeof(payload_buf));
+        if (!pb_encode(&payload_stream, Ack_fields, &ack)) {
+            printf("Failed to encode Ack: %s\n", PB_GET_ERROR(&payload_stream));
+            return;
+        }
+
+        size_t payload_size = payload_stream.bytes_written;
+
+        // Wrap in RpcResponse
+        RpcResponse response = RpcResponse_init_zero;
+        response.request_id = request_id;
+        response.payload.size = payload_size;
+        memcpy(response.payload.bytes, payload_buf, payload_size);
+        strncpy(response.status, "OK", sizeof(response.status) - 1);
+
+        // Encode RpcResponse
+        uint8_t buf[256];
+        pb_ostream_t stream = pb_ostream_from_buffer(buf, sizeof(buf));
+        if (!pb_encode(&stream, RpcResponse_fields, &response)) {
+            printf("Failed to encode RpcResponse: %s\n", PB_GET_ERROR(&stream));
+            return;
+        }
+
+        // Send buffer to host
+        uint8_t* wasm_buf = (uint8_t*)malloc(stream.bytes_written);
+        if (!wasm_buf) {
+            printf("Failed to malloc response buffer\n");
+            return;
+        }
+
+        memcpy(wasm_buf, buf, stream.bytes_written);
+        send_rpcresponse((uint32_t)wasm_buf, stream.bytes_written, request_id);
+    }
+
 
 private:
     MessageBuffer receive_buffer(uint32_t max_length) {
@@ -55,7 +95,7 @@ private:
         return {buffer_ptr, max_length};
     }
 
-    void handle_SendMessage(const void* payload_data, size_t payload_size) {
+    void handle_SendMessage(uint32_t request_id, const void* payload_data, size_t payload_size) {
         MyMessage msg = MyMessage_init_zero;
         pb_istream_t payload_stream = pb_istream_from_buffer((const pb_byte_t*)payload_data, payload_size);
         if (!pb_decode(&payload_stream, MyMessage_fields, &msg)) {
@@ -66,6 +106,12 @@ private:
         printf("[Server] Received msg: id=%d name=\"%s\"\n", msg.id, msg.name);
 
         // TODO: encode response and return via host
+        // Construct Ack
+        Ack ack = Ack_init_zero;
+        ack.success = true;
+        snprintf(ack.info, sizeof(ack.info), "Got message from '%s'", msg.name);
+
+        send_ack_response(request_id, ack);
     }
 };
 
