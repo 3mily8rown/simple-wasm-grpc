@@ -73,7 +73,7 @@ int main() {
     pthread_t socket_thread;
     pthread_create(&socket_thread, nullptr, [](void* arg) -> void* {
         auto* module_inst = static_cast<wasm_module_inst_t>(arg);
-        socket_listener(module_inst, response_port, default_ip);
+        socket_listener(module_inst, response_port, inet_addr(default_client_ip));
         return nullptr;
     }, client_module_inst);
 
