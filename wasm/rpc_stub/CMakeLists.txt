@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(rpc_stub LANGUAGES C CXX)
 
 # variables supplied by super-builds ----------
-foreach(var PROTOC_EXECUTABLE PROTO_DIR PIGWEED_DIR)
+foreach(var PROTO_DIR)
     if(NOT DEFINED ${var})
         message(FATAL_ERROR "${var} not set")
     endif()

@@ -3,14 +3,6 @@ project(super LANGUAGES NONE)
 include(ExternalProject)
 
 # -----------------------------------------------------------------
-# protoc
-# -----------------------------------------------------------------
-find_program(SYSTEM_PROTOC protoc)
-if(NOT SYSTEM_PROTOC)
-  message(FATAL_ERROR "protoc not found; please install protobuf-compiler")
-endif()
-
-# -----------------------------------------------------------------
 # wasm (needs protoc for proto messages)
 # -----------------------------------------------------------------
 ExternalProject_Add(wasm
@@ -20,7 +12,6 @@ ExternalProject_Add(wasm
 
   CMAKE_ARGS
         -DCMAKE_TOOLCHAIN_FILE=/home/eb/fyp/wasi-sdk-25.0-x86_64-linux/share/cmake/wasi-sdk.cmake
-        -DPROTOC_EXECUTABLE=${SYSTEM_PROTOC}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DPROTO_DIR=${CMAKE_SOURCE_DIR}/wasm/proto_messages
         -DIMPORTS_DIR=<INSTALL_DIR>/generated
