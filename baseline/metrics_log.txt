@@ -1,0 +1,11 @@
+Run,Timestamp,Metric
+1,2025-05-26T14:58:53,Round-trip time: 140 microseconds
+2,2025-05-26T14:58:54,Round-trip time: 261 microseconds
+3,2025-05-26T14:58:55,Round-trip time: 332 microseconds
+4,2025-05-26T14:58:56,Round-trip time: 165 microseconds
+5,2025-05-26T14:58:57,Round-trip time: 210 microseconds
+6,2025-05-26T14:58:58,Round-trip time: 280 microseconds
+7,2025-05-26T14:58:59,Round-trip time: 253 microseconds
+8,2025-05-26T14:59:00,Round-trip time: 274 microseconds
+9,2025-05-26T14:59:01,Round-trip time: 276 microseconds
+10,2025-05-26T14:59:02,Round-trip time: 181 microseconds

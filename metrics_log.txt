@@ -1,0 +1,11 @@
+Run,Timestamp,Metric
+1,2025-05-26T14:07:12,Round-trip latency: 22632.3 us
+2,2025-05-26T14:07:15,Round-trip latency: 23131.2 us
+3,2025-05-26T14:07:19,Round-trip latency: 18793.8 us
+4,2025-05-26T14:07:22,Round-trip latency: 21512.6 us
+5,2025-05-26T14:07:25,Round-trip latency: 22039.5 us
+6,2025-05-26T14:07:28,Round-trip latency: 11474.4 us
+7,2025-05-26T14:07:31,Round-trip latency: 21616.7 us
+8,2025-05-26T14:07:34,Round-trip latency: 19002.6 us
+9,2025-05-26T14:07:37,Round-trip latency: 21131.8 us
+10,2025-05-26T14:07:41,Round-trip latency: 17311.9 us

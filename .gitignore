@@ -6,3 +6,4 @@ host_tools
 TODO
 native/src/CMakeListsArchive
 third_party
+baseline/build

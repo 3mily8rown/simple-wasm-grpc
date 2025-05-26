@@ -4,6 +4,7 @@
 #include <string>
 #include <pthread.h>
 #include <wasm_export.h>
+#include <chrono>
 
 #include "wamr/load_module.h"
 #include "wasm/call_wasm.h"
@@ -13,6 +14,7 @@
 
 #include "client_app_imports.h"
 #include <unistd.h>
+#include <iostream>
 
 void register_all_env_symbols() {
     wasm_runtime_register_natives(
@@ -87,6 +89,8 @@ int main() {
       return 1;
     }
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     pthread_t c_th;
     if (!start_wasm_thread(client_module_inst, client_func, &c_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
@@ -94,7 +98,12 @@ int main() {
 
     // ------------------------------
     // wait for branches
-    pthread_join(c_th, nullptr);   
+    pthread_join(c_th, nullptr); 
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    double duration_us = std::chrono::duration<double, std::micro>(end - start).count();
+
+    std::cout << "[METRIC] Round-trip latency: " << duration_us << " us\n";
     // pthread_join(socket_thread, nullptr);  
 
     wasm_runtime_deinstantiate(client_module_inst);
