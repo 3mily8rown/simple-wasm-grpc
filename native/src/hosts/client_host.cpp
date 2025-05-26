@@ -8,9 +8,11 @@
 #include "wamr/load_module.h"
 #include "wasm/call_wasm.h"
 #include "wamr/thread_launch.h"
+#include "rpc/socket_communication.h"
 #include "config.h"
 
 #include "client_app_imports.h"
+#include <unistd.h>
 
 void register_all_env_symbols() {
     wasm_runtime_register_natives(
@@ -64,6 +66,17 @@ int main() {
       return 1;
     }
 
+    // ------------------------------
+    // start socket listener
+    pthread_t socket_thread;
+    pthread_create(&socket_thread, nullptr, [](void* arg) -> void* {
+        auto* module_inst = static_cast<wasm_module_inst_t>(arg);
+        socket_listener(module_inst, response_port, default_ip);
+        return nullptr;
+    }, client_module_inst);
+
+    sleep(1);
+
     // ---------------------------------------------------------------- client
 
     wasm_runtime_set_log_level(WASM_LOG_LEVEL_ERROR);
@@ -81,7 +94,12 @@ int main() {
 
     // ------------------------------
     // wait for branches
-    pthread_join(c_th, nullptr);  
+    pthread_join(c_th, nullptr);   
+    // pthread_join(socket_thread, nullptr);  
+
+    wasm_runtime_deinstantiate(client_module_inst);
+    wasm_runtime_unload(client_module);
+    wasm_runtime_destroy();
 
     return 0;
 }

@@ -12,6 +12,7 @@
 #include "config.h"
 
 #include "server_app_imports.h"
+#include <unistd.h>
 
 void register_all_env_symbols() {
 
@@ -67,6 +68,17 @@ int main() {
       return 1;
     }
 
+    // ------------------------------
+    // start socket listener
+    pthread_t socket_thread;
+    pthread_create(&socket_thread, nullptr, [](void* arg) -> void* {
+        auto* module_inst = static_cast<wasm_module_inst_t>(arg);
+        socket_listener(module_inst, message_port);
+        return nullptr;
+    }, server_module_inst);
+
+    sleep(1);
+
     // ---------------------------------------------- server
     auto server_func = wasm_runtime_lookup_function(server_module_inst, "_start");
     if (!server_func) {
@@ -79,19 +91,11 @@ int main() {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
 
-    // ------------------------------
-    // start socket listener
-    pthread_t socket_thread;
-    pthread_create(&socket_thread, nullptr, [](void* arg) -> void* {
-        auto* module_inst = static_cast<wasm_module_inst_t>(arg);
-        socket_listener(module_inst, 12345);
-        return nullptr;
-    }, server_module_inst);
 
     // ----------------------------------
     // wait for branches
     pthread_join(s_th, nullptr);  
-    pthread_join(socket_thread, nullptr);  
+    // pthread_join(socket_thread, nullptr);  
 
     wasm_runtime_deinstantiate(server_module_inst);
     wasm_runtime_unload(server_module);

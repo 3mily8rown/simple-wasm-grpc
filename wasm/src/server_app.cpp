@@ -10,7 +10,7 @@
 #include <string.h>
 
 extern int32_t receive_rpcmessage(uint32_t offset, uint32_t length);
-extern void send_rpcresponse(uint32_t offset, uint32_t length, uint32_t request_id);
+extern void send_rpcresponse(uint32_t offset, uint32_t length);
 
 
 struct MessageBuffer {
@@ -23,7 +23,9 @@ public:
     void HandleIncoming() {
         // Allocate buffer in WASM
         MessageBuffer buf = receive_buffer(256); // adjustable max size
+        printf("[Server] Waiting for message...\n");
         int32_t actual_size = receive_rpcmessage((uint32_t)buf.ptr, buf.size);
+        printf("[Server] Received %d bytes\n", actual_size);
         if (actual_size <= 0) {
             printf("No message received\n");
             return;
@@ -42,7 +44,7 @@ public:
         const char* method = envelope.method;
 
         if (strcmp(method, "SendMessage") == 0) {
-            handle_SendMessage(request_id, envelope.payload.bytes, envelope.payload.size);
+            handle_SendMessage(envelope.request_id, envelope.payload.bytes, envelope.payload.size);
         } else {        // Handle other methods or unknown method
             printf("Unknown method: %s\n", method);
         }
@@ -84,7 +86,7 @@ public:
         }
 
         memcpy(wasm_buf, buf, stream.bytes_written);
-        send_rpcresponse((uint32_t)wasm_buf, stream.bytes_written, request_id);
+        send_rpcresponse((uint32_t)wasm_buf, stream.bytes_written);
     }
 
 
