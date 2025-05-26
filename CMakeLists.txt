@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 project(super LANGUAGES NONE)
 include(ExternalProject)
 
+# TODO: set this to your WASI SDK path
+set(WASI_TOOLCHAIN_FILE "/home/eb/fyp/wasi-sdk-25.0-x86_64-linux/share/cmake/wasi-sdk.cmake")
+
 # -----------------------------------------------------------------
 # wasm (needs protoc for proto messages)
 # -----------------------------------------------------------------
@@ -11,7 +14,7 @@ ExternalProject_Add(wasm
   INSTALL_DIR ${CMAKE_BINARY_DIR}/install
 
   CMAKE_ARGS
-        -DCMAKE_TOOLCHAIN_FILE=/home/eb/fyp/wasi-sdk-25.0-x86_64-linux/share/cmake/wasi-sdk.cmake
+        -DCMAKE_TOOLCHAIN_FILE=${WASI_TOOLCHAIN_FILE}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DPROTO_DIR=${CMAKE_SOURCE_DIR}/wasm/proto_messages
         -DIMPORTS_DIR=<INSTALL_DIR>/generated
