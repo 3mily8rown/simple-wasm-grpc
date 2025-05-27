@@ -8,15 +8,15 @@ foreach(var PROTO_DIR SCRIPT_DIR)
     endif()
 endforeach()
 
-# # Python venv for protoc-gen-nanopb ----------
-# find_package(Python3 REQUIRED COMPONENTS Interpreter)
-# set(VENV "${CMAKE_BINARY_DIR}/nanopb_venv")
-# add_custom_command(
-#     OUTPUT  "${VENV}/.done"
-#     COMMAND "${Python3_EXECUTABLE}" -m venv "${VENV}"
-#     COMMAND "${VENV}/bin/pip" install --upgrade pip protobuf grpcio-tools
-#     COMMAND "${CMAKE_COMMAND}" -E touch "${VENV}/.done")
-# add_custom_target(nano_venv ALL DEPENDS "${VENV}/.done")
+# Python venv for protoc-gen-nanopb ----------
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(VENV "${CMAKE_BINARY_DIR}/nanopb_venv")
+add_custom_command(
+    OUTPUT  "${VENV}/.done"
+    COMMAND "${Python3_EXECUTABLE}" -m venv "${VENV}"
+    COMMAND "${VENV}/bin/pip" install --upgrade pip protobuf grpcio-tools
+    COMMAND "${CMAKE_COMMAND}" -E touch "${VENV}/.done")
+add_custom_target(nano_venv ALL DEPENDS "${VENV}/.done")
 
 # Add static rpc stub library
 add_subdirectory(rpc_stub)

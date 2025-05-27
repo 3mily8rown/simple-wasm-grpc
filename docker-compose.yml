@@ -61,6 +61,25 @@ services:
     cap_add:
       - NET_ADMIN
 
+  wasm_single_vm:
+    image: ubuntu:24.04
+    container_name: wasm_single_vm_container
+    volumes:
+      - ./build/native:/app
+      - ./build/wasm-prefix/src/wasm-build:/app/wasm
+    working_dir: /app
+    command: ["/bin/bash", "-c", "./server_host & sleep 1 && ./client_host"]
+    networks:
+      - testnet
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - ./config/paths_docker.env
+    environment:
+      - SERVER_HOST=127.0.0.1
+      - CLIENT_HOST=127.0.0.1
+
+
 networks:
   testnet:
     driver: bridge

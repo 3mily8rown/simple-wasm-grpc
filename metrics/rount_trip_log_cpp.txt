@@ -1,11 +1,1 @@
 Run,Timestamp,Metric
-1,2025-05-27T14:05:59,cpp_client_container  | Round-trip time: 20602 microseconds
-2,2025-05-27T14:06:01,cpp_client_container  | Round-trip time: 20960 microseconds
-3,2025-05-27T14:06:02,cpp_client_container  | Round-trip time: 20340 microseconds
-4,2025-05-27T14:06:03,cpp_client_container  | Round-trip time: 20446 microseconds
-5,2025-05-27T14:06:04,cpp_client_container  | Round-trip time: 20581 microseconds
-6,2025-05-27T14:06:05,cpp_client_container  | Round-trip time: 20404 microseconds
-7,2025-05-27T14:06:06,cpp_client_container  | Round-trip time: 20522 microseconds
-8,2025-05-27T14:06:08,cpp_client_container  | Round-trip time: 20290 microseconds
-9,2025-05-27T14:06:09,cpp_client_container  | Round-trip time: 21256 microseconds
-10,2025-05-27T14:06:10,cpp_client_container  | Round-trip time: 20264 microseconds

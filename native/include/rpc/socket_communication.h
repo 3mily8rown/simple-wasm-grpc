@@ -6,12 +6,27 @@ constexpr int message_port = 12345;
 constexpr int response_port = 12346;
 
 // Default IP strings
-constexpr const char* default_server_ip = "client_container";
-constexpr const char* default_client_ip = "server_container";
+constexpr const char* get_env_or_default(const char* env_var, const char* fallback) {
+    const char* value = getenv(env_var);
+    return value ? value : fallback;
+}
+
+inline const char* get_server_ip() {
+    return get_env_or_default("SERVER_HOST", "client_container");
+}
+
+inline const char* get_client_ip() {
+    return get_env_or_default("CLIENT_HOST", "server_container");
+}
+
 
 void socket_listener(wasm_module_inst_t module_inst, int port = message_port, in_addr_t ip = INADDR_NONE);
 void socket_response_listener(wasm_module_inst_t module_inst, int port = response_port, in_addr_t ip = INADDR_NONE);
 
-void send_over_socket(const uint8_t* data, uint32_t length, const char* ip = default_client_ip, uint16_t port = message_port);
-void send_response_over_socket(const uint8_t* data, uint32_t length, const char* ip = default_server_ip, uint16_t port = response_port);
+void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint16_t port = message_port);
+void send_response_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint16_t port = response_port);
+
+// Convenience overloads (optional):
+void send_over_socket(const uint8_t* data, uint32_t length); // default to get_client_ip()
+void send_response_over_socket(const uint8_t* data, uint32_t length); // default to get_server_ip()
 

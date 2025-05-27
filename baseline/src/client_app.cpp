@@ -32,12 +32,11 @@ public:
         sockaddr_in serv_addr{};
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_port = htons(port);
-        hostent* host = gethostbyname(server_ip);
-        if (!host) {
-            perror("gethostbyname");
-            exit(1);
+        if (inet_pton(AF_INET, server_ip, &serv_addr.sin_addr) != 1) {
+            perror("inet_pton");
+            throw std::runtime_error(std::string("Failed to resolve hostname: ") + server_ip);
         }
-        std::memcpy(&serv_addr.sin_addr, host->h_addr, host->h_length);
+
 
 
         for (int i = 0; i < 10; ++i) {

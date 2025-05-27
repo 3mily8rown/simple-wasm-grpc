@@ -8,17 +8,14 @@
 #include "rpc/message_queue.h"
 #include "rpc/socket_communication.h"
 
+in_addr_t resolve_ip_or_throw(const char* hostname);
+
 
 void socket_listener(wasm_module_inst_t module_inst, int port, in_addr_t ip) {
     if (ip == INADDR_NONE) {
-        // Resolve hostname to IP
-        const char* hostname = default_client_ip;  // "server_container"
-        hostent* host = gethostbyname(hostname);
-        if (!host) {
-            throw std::runtime_error(std::string("Failed to resolve hostname: ") + hostname);
-        }
-        std::memcpy(&ip, host->h_addr, host->h_length);
+        ip = resolve_ip_or_throw(get_server_ip());  // or get_client_ip()
     }
+
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in addr = { AF_INET, htons(port), ip };
@@ -63,6 +60,10 @@ void socket_listener(wasm_module_inst_t module_inst, int port, in_addr_t ip) {
 }
 
 void socket_response_listener(wasm_module_inst_t module_inst, int port, in_addr_t ip) {
+    if (ip == INADDR_NONE) {
+        ip = resolve_ip_or_throw(get_client_ip());  // or get_client_ip()
+    }
+
     socket_listener(module_inst, port, ip);
 }
 
@@ -79,13 +80,12 @@ void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint
     sockaddr_in server_addr{};
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
-    hostent* host = gethostbyname(ip);
-    if (!host) {
-        perror((tag + " gethostbyname").c_str());
+    if (inet_pton(AF_INET, ip, &server_addr.sin_addr) != 1) {
+        perror((tag + " inet_pton").c_str());
         close(sock);
         return;
     }
-    std::memcpy(&server_addr.sin_addr, host->h_addr, host->h_length);
+
 
 
     std::cout << "[Native] Attempting to connect to " << ip << ":" << port << "\n";
@@ -113,3 +113,28 @@ void send_response_over_socket(const uint8_t* data, uint32_t length, const char*
     std::cout << "[Native] Sending response to " << ip << ":" << port << "\n";
     send_over_socket(data, length, ip, port);
 }
+
+void send_over_socket(const uint8_t* data, uint32_t length) {
+    send_over_socket(data, length, get_client_ip(), message_port);
+}
+
+void send_response_over_socket(const uint8_t* data, uint32_t length) {
+    send_response_over_socket(data, length, get_server_ip(), response_port);
+}
+
+in_addr_t resolve_ip_or_throw(const char* hostname) {
+    in_addr addr_parsed{};
+    if (inet_pton(AF_INET, hostname, &addr_parsed) == 1) {
+        return addr_parsed.s_addr;
+    }
+
+    hostent* host = gethostbyname(hostname);
+    if (!host) {
+        throw std::runtime_error(std::string("Failed to resolve hostname: ") + hostname);
+    }
+
+    in_addr_t ip;
+    std::memcpy(&ip, host->h_addr, host->h_length);
+    return ip;
+}
+
