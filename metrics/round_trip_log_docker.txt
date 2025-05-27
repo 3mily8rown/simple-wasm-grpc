@@ -1,0 +1,11 @@
+Run,Timestamp,Metric
+1,2025-05-27T14:05:27,client_container  | Round-trip latency: 8938.76 us
+2,2025-05-27T14:05:29,client_container  | Round-trip latency: 15089.3 us
+3,2025-05-27T14:05:31,client_container  | Round-trip latency: 21998.2 us
+4,2025-05-27T14:05:33,client_container  | Round-trip latency: 22152.7 us
+5,2025-05-27T14:05:35,client_container  | Round-trip latency: 10931.9 us
+6,2025-05-27T14:05:37,client_container  | Round-trip latency: 21870.7 us
+7,2025-05-27T14:05:39,client_container  | Round-trip latency: 13793.5 us
+8,2025-05-27T14:05:41,client_container  | Round-trip latency: 21808.5 us
+9,2025-05-27T14:05:43,client_container  | Round-trip latency: 12330.2 us
+10,2025-05-27T14:05:45,client_container  | Round-trip latency: 23137.9 us

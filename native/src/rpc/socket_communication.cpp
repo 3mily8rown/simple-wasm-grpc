@@ -3,11 +3,23 @@
 #include <unistd.h>
 #include <cstring>
 #include <arpa/inet.h>
+#include <netdb.h>
+
 #include "rpc/message_queue.h"
 #include "rpc/socket_communication.h"
 
 
 void socket_listener(wasm_module_inst_t module_inst, int port, in_addr_t ip) {
+    if (ip == INADDR_NONE) {
+        // Resolve hostname to IP
+        const char* hostname = default_client_ip;  // "server_container"
+        hostent* host = gethostbyname(hostname);
+        if (!host) {
+            throw std::runtime_error(std::string("Failed to resolve hostname: ") + hostname);
+        }
+        std::memcpy(&ip, host->h_addr, host->h_length);
+    }
+
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in addr = { AF_INET, htons(port), ip };
     char ip_buf[INET_ADDRSTRLEN];
@@ -67,7 +79,14 @@ void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint
     sockaddr_in server_addr{};
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
-    server_addr.sin_addr.s_addr = inet_addr(ip);
+    hostent* host = gethostbyname(ip);
+    if (!host) {
+        perror((tag + " gethostbyname").c_str());
+        close(sock);
+        return;
+    }
+    std::memcpy(&server_addr.sin_addr, host->h_addr, host->h_length);
+
 
     std::cout << "[Native] Attempting to connect to " << ip << ":" << port << "\n";
     int result = connect(sock, (sockaddr*)&server_addr, sizeof(server_addr));
@@ -87,7 +106,6 @@ void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint
         std::fprintf(stderr, "%s Partial send: %zd of %u bytes\n", tag.c_str(), sent, length);
     }
 
-    // what is this closing?
     close(sock);
 }
 

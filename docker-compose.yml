@@ -1,0 +1,67 @@
+services:
+  server:
+    image: ubuntu:24.04
+    container_name: server_container
+    volumes:
+      - ./build/native:/app
+      - ./build/wasm-prefix/src/wasm-build:/app/wasm
+    working_dir: /app
+    command: ["./server_host"]
+    networks:
+      - testnet
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - ./config/paths_docker.env
+
+  client:
+    image: ubuntu:24.04
+    container_name: client_container
+    volumes:
+      - ./build/native:/app
+      - ./build/wasm-prefix/src/wasm-build:/app/wasm
+    working_dir: /app
+    command: ["./client_host"]
+    depends_on:
+      - server
+    networks:
+      - testnet
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - ./config/paths_docker.env
+
+  cpp_server:
+    build:
+      context: ./baseline
+      dockerfile: Dockerfile.tc
+    container_name: cpp_server_container
+    volumes:
+      - ./baseline/build:/app
+    working_dir: /app
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 5ms && ./native_server"]
+    networks:
+      - testnet
+    cap_add:
+      - NET_ADMIN
+
+  cpp_client:
+    build:
+      context: ./baseline
+      dockerfile: Dockerfile.tc
+    container_name: cpp_client_container
+    volumes:
+      - ./baseline/build:/app
+    working_dir: /app
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 5ms && ./native_client"]
+    depends_on:
+      - cpp_server
+    networks:
+      - testnet
+    cap_add:
+      - NET_ADMIN
+
+networks:
+  testnet:
+    driver: bridge
+

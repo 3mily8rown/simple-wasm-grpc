@@ -4,10 +4,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <netdb.h>
+#include <iostream>
+#include <cstring>
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <chrono>
+#include <thread>
+
 
 #include "pb_encode.h"
 #include "pb_decode.h"
@@ -27,10 +32,26 @@ public:
         sockaddr_in serv_addr{};
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_port = htons(port);
-        inet_pton(AF_INET, server_ip, &serv_addr.sin_addr);
+        hostent* host = gethostbyname(server_ip);
+        if (!host) {
+            perror("gethostbyname");
+            exit(1);
+        }
+        std::memcpy(&serv_addr.sin_addr, host->h_addr, host->h_length);
 
-        if (connect(sockfd, (sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
-            perror("connect");
+
+        for (int i = 0; i < 10; ++i) {
+        if (connect(sockfd, (sockaddr*)&serv_addr, sizeof(serv_addr)) == 0) {
+            break;  // success
+        }
+        perror("connect");
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        if (i == 9) {
+            std::cerr << "Failed to connect after 10 attempts\n";
+            exit(1);
+        }
+}
+
     }
 
     ~RpcClient() {
@@ -107,7 +128,7 @@ int main() {
     printf("Client main function\n");
 
     // Connect to server on localhost:12345
-    RpcClient client("127.0.0.1", 12345);
+    RpcClient client("cpp_server_container", 12345);
 
     // Construct message
     MyMessage msg = MyMessage_init_default;
