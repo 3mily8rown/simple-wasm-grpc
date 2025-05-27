@@ -21,7 +21,9 @@ void socket_listener(wasm_module_inst_t module_inst, int port, in_addr_t ip) {
     std::cout << "Host listening over port " << port << "...\n";
 
     while (true) {
+        std::cout << "[Native] Waiting for connection on port " << port << std::endl;
         int client_fd = accept(server_fd, nullptr, nullptr);
+
         if (client_fd < 0) {
             perror("accept failed");
             continue;
