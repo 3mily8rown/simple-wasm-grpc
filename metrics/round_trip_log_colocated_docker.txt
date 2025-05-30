@@ -1,0 +1,11 @@
+Run,Timestamp,Metric
+1,2025-05-30T21:28:52,wasm_rpc_host_container  | RTT = 1280μs
+2,2025-05-30T21:28:53,wasm_rpc_host_container  | RTT = 1299μs
+3,2025-05-30T21:28:54,wasm_rpc_host_container  | RTT = 1308μs
+4,2025-05-30T21:28:55,wasm_rpc_host_container  | RTT = 1601μs
+5,2025-05-30T21:28:56,wasm_rpc_host_container  | RTT = 4424μs
+6,2025-05-30T21:28:56,wasm_rpc_host_container  | RTT = 1903μs
+7,2025-05-30T21:28:57,wasm_rpc_host_container  | RTT = 1303μs
+8,2025-05-30T21:28:58,wasm_rpc_host_container  | RTT = 1287μs
+9,2025-05-30T21:28:59,wasm_rpc_host_container  | RTT = 1685μs
+10,2025-05-30T21:29:00,wasm_rpc_host_container  | RTT = 1304μs
