@@ -43,39 +43,3 @@ bool RpcClient::Send(const char* method,
     return rc >= 0;
 }
 
-// template<typename T>
-// bool RpcClient::Receive(const pb_msgdesc_t* resp_fields, T* out_msg)
-// {
-//     // 1) Allocate a buffer to read into
-//     uint8_t* buf = (uint8_t*)std::malloc(512);
-//     if (!buf) return false;
-
-//     int32_t len = receive_rpcresponse((uint32_t)buf, 512);
-//     if (len <= 0) {
-//         std::free(buf);
-//         return false;
-//     }
-
-//     // 2) Decode the outer RpcResponse
-//     RpcResponse resp = RpcResponse_init_zero;
-//     pb_istream_t stream = pb_istream_from_buffer(buf, len);
-//     if (!pb_decode(&stream, RpcResponse_fields, &resp)) {
-//         std::fprintf(stderr, "Response decode error: %s\n", PB_GET_ERROR(&stream));
-//         std::free(buf);
-//         return false;
-//     }
-
-//     // 3) Decode the inner payload into the user-provided message
-//     pb_istream_t payload_stream = pb_istream_from_buffer(resp.payload.bytes, resp.payload.size);
-//     bool ok = pb_decode(&payload_stream, resp_fields, out_msg);
-//     if (!ok) {
-//         std::fprintf(stderr, "Payload decode error: %s\n", PB_GET_ERROR(&payload_stream));
-//     }
-
-//     std::free(buf);
-//     return ok;
-// }
-
-// Explicit instantiation for your Ack type:
-// template bool RpcClient::Receive<Ack>(const pb_msgdesc_t*, Ack*);
-

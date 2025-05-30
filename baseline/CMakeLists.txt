@@ -1,74 +1,72 @@
 cmake_minimum_required(VERSION 3.15)
 project(NativeRPCExample C CXX)
-
 set(CMAKE_CXX_STANDARD 17)
 
-# Bring in Nanopb runtime only
+# ——— Nanopb as before ———
 include(FetchContent)
-set(nanopb_BUILD_GENERATOR OFF CACHE BOOL "" FORCE)
-set(nanopb_BUILD_RUNTIME   ON  CACHE BOOL "" FORCE)
-
+set(nanopb_BUILD_GENERATOR OFF CACHE BOOL “” FORCE)
+set(nanopb_BUILD_RUNTIME   ON  CACHE BOOL “” FORCE)
 FetchContent_Declare(
-    nanopb
-    GIT_REPOSITORY https://github.com/nanopb/nanopb.git
-    GIT_TAG        0.4.9
+  nanopb
+  GIT_REPOSITORY https://github.com/nanopb/nanopb.git
+  GIT_TAG        0.4.9
 )
 FetchContent_MakeAvailable(nanopb)
-
 add_library(nanopb::nanopb ALIAS protobuf-nanopb-static)
 
-# Path to generated Nanopb files
+# ——— Proto library ———
 set(GENERATED_PB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build/wasm-prefix/src/wasm-build/generated_nano")
-
-set(NANOPB_SOURCE_DIR "${nanopb_SOURCE_DIR}")  # from FetchContent_MakeAvailable
-
+set(NANOPB_SOURCE_DIR "${nanopb_SOURCE_DIR}")
 set(NANOPB_SOURCES
-    ${NANOPB_SOURCE_DIR}/pb_encode.c
-    ${NANOPB_SOURCE_DIR}/pb_decode.c
-    ${NANOPB_SOURCE_DIR}/pb_common.c
+  ${NANOPB_SOURCE_DIR}/pb_encode.c
+  ${NANOPB_SOURCE_DIR}/pb_decode.c
+  ${NANOPB_SOURCE_DIR}/pb_common.c
 )
-
-# Pre-generated .pb files (in same dir as headers)
 set(PROTO_SOURCES
-    "${GENERATED_PB_DIR}/message.pb.c"
-    "${GENERATED_PB_DIR}/rpc_envelope.pb.c"
+  "${GENERATED_PB_DIR}/message.pb.c"
+  "${GENERATED_PB_DIR}/rpc_envelope.pb.c"
 )
-
-# Create proto + nanopb static library
 add_library(proto_nano STATIC
-    ${PROTO_SOURCES}
-    ${NANOPB_SOURCES}
+  ${PROTO_SOURCES}
+  ${NANOPB_SOURCES}
 )
 target_include_directories(proto_nano PUBLIC
-    ${GENERATED_PB_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+  ${GENERATED_PB_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(proto_nano PUBLIC nanopb::nanopb)
 
-# Native client
+# ——— Shared RPC primitives (client, server, socket, queue) ———
+file(GLOB RPC_PRIMITIVES_SRCS
+  ../native/src/rpc/socket_communication.cpp
+  ../native/src/rpc/message_queue.cpp
+  src/rpc_defs/rpc_client.cpp       # <-- make sure this is the correct path
+  src/rpc_defs/rpc_server.cpp       # <-- if you have a server impl here too
+)
+add_library(rpc_primitives STATIC ${RPC_PRIMITIVES_SRCS})
+target_include_directories(rpc_primitives PUBLIC
+  ../native/include
+  src/rpc_defs
+)
+
+# ——— Native client_app ———
 add_executable(native_client src/client_app.cpp)
 target_link_libraries(native_client PRIVATE proto_nano)
 
-# Native server
+# ——— Native server_app ———
 add_executable(native_server src/server_app.cpp)
 target_link_libraries(native_server PRIVATE proto_nano)
 
-# Native client same rpc
-add_executable(native_client_same src/client_app_wasm.cpp ../native/src/rpc/socket_communication.cpp
-    ../native/src/rpc/message_queue.cpp)
-target_link_libraries(native_client_same PRIVATE proto_nano)
-
-# Native server same rpc
-add_executable(native_server_same src/server_app_wasm.cpp ../native/src/rpc/socket_communication.cpp
-    ../native/src/rpc/message_queue.cpp)
-target_link_libraries(native_server_same PRIVATE proto_nano)
-
-# Add include path for shared socket code
-target_include_directories(native_client_same PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../native/include
+# ——— “Same RPC” client ———
+add_executable(native_client_same src/client.cpp)
+target_link_libraries(native_client_same PRIVATE
+  proto_nano
+  rpc_primitives
 )
 
-target_include_directories(native_server_same PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../native/include
+# ——— “Same RPC” server ———
+add_executable(native_server_same src/server.cpp)
+target_link_libraries(native_server_same PRIVATE
+  proto_nano
+  rpc_primitives
 )
-
