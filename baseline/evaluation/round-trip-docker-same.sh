@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_file="metrics/rount_trip_cpp_same_log.txt"
+output_file="metrics/rount_trip_cpp_same_docker_log.txt"
 echo "Run,Timestamp,Metric" > "$output_file"
 
 num_runs=10

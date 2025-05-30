@@ -1,0 +1,11 @@
+Run,Timestamp,Metric
+1,2025-05-30T21:12:41,cpp_client_container  | RTT = 41820 μs
+2,2025-05-30T21:12:52,cpp_client_container  | RTT = 41809 μs
+3,2025-05-30T21:13:04,cpp_client_container  | RTT = 42152 μs
+4,2025-05-30T21:13:15,cpp_client_container  | RTT = 42499 μs
+5,2025-05-30T21:13:26,cpp_client_container  | RTT = 41567 μs
+6,2025-05-30T21:13:38,cpp_client_container  | RTT = 41709 μs
+7,2025-05-30T21:13:49,cpp_client_container  | RTT = 41711 μs
+8,2025-05-30T21:14:00,cpp_client_container  | RTT = 42034 μs
+9,2025-05-30T21:14:12,cpp_client_container  | RTT = 42562 μs
+10,2025-05-30T21:14:23,cpp_client_container  | RTT = 41624 μs

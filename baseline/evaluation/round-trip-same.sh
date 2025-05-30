@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_file="metrics/round_trip_cpp_log.txt"
+output_file="metrics/round_trip_cpp_same_log.txt"
 echo "Run,Timestamp,Metric" > "$output_file"
 
 num_runs=10  # Set how many runs you want

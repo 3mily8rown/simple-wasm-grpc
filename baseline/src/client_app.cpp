@@ -125,7 +125,7 @@ public:
 
 inline const char* get_server_ip() {
     const char* ip = getenv("SERVER_HOST");
-    return ip ? ip : "cpp_server_container";  // fallback for Docker
+    return ip ? ip : "127.0.0.1";  // fallback for non-Docker environments
 }
 
 int main() {
@@ -153,7 +153,7 @@ int main() {
     auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
     printf("[Client] Ack: success=%d, info=\"%s\"\n", ack.success, ack.info);
-    printf("[METRICS] Round-trip time: %ld microseconds\n", duration_us);
+    printf("[METRICS] Round-trip time: %ld μs\n", duration_us);
 
     return 0;
 }
