@@ -4,7 +4,7 @@
 #include <string>
 #include <pthread.h>
 #include <wasm_export.h>
-
+#include <iostream>
 #include "wamr/load_module.h"
 #include "wasm/call_wasm.h"
 #include "wamr/thread_launch.h"
@@ -24,6 +24,9 @@ void register_all_env_symbols() {
 }
 
 int main() {
+    std::cerr << "[Server] starting up\n";          // unbuffered
+    std::cout.setf(std::ios::unitbuf);  // enable unbuffered output for std::cout
+
     // setting up wasm module
     wasm_runtime_set_log_level(WASM_LOG_LEVEL_DEBUG);
   
@@ -49,7 +52,7 @@ int main() {
     init_args.mem_alloc_option.pool.heap_size = sizeof(global_heap_buf);
   
     if (!wasm_runtime_full_init(&init_args)) {
-      printf("Init runtime environment failed.\n");
+      std::cerr << "[Server] Init runtime environment failed." << std::endl;
       return -1;
     }
   
@@ -65,11 +68,14 @@ int main() {
     // load module and create execution environment
     server_module = load_module_minimal(server_buffer, server_module_inst, server_exec_env, stack_size, heap_size, error_buf, sizeof(error_buf));
     if (!server_module) {
+      std::cerr << "[Server] Failed to load WASM module: " 
+                  << error_buf << std::endl;
       return 1;
     }
 
     // ------------------------------
     // start socket listener
+    std::cout << "[Server] start socket listener." << std::endl;
     pthread_t socket_thread;
     pthread_create(&socket_thread, nullptr, [](void* arg) -> void* {
         auto* module_inst = static_cast<wasm_module_inst_t>(arg);
@@ -80,12 +86,14 @@ int main() {
     sleep(1);
 
     // ---------------------------------------------- server
+    std::cout << "[Server] find server func" << std::endl;
     auto server_func = wasm_runtime_lookup_function(server_module_inst, "_start");
     if (!server_func) {
       fprintf(stderr, "_start wasm function is not found.\n");
       return 1;
     }
 
+    std::cout << "[Server] start server" << std::endl;
     pthread_t s_th;
     if (!start_wasm_thread(server_module_inst, server_func, &s_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
@@ -93,6 +101,8 @@ int main() {
 
 
     // ----------------------------------
+    std::cout << "[Server] wait for threads" << std::endl;
+
     // wait for branches
     pthread_join(s_th, nullptr);  
     // pthread_join(socket_thread, nullptr);  
