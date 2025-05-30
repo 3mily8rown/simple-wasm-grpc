@@ -83,7 +83,7 @@ services:
     volumes:
       - ./baseline/build:/app
     working_dir: /app
-    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 0ms && ./native_server_same"]
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 5ms 2ms && ./native_server_same"]
     networks:
       - testnet
     cap_add:

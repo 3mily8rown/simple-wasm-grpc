@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_file="metrics/round_trip_cpp_same_docker_log_no_delay.txt"
+output_file="metrics/round_trip_cpp_same_docker_log_5ms_2ms.txt"
 echo "Run,Timestamp,Metric" > "$output_file"
 
 num_runs=10
