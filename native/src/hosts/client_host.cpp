@@ -73,7 +73,7 @@ int main() {
     pthread_t socket_thread;
     pthread_create(&socket_thread, nullptr, [](void* arg) -> void* {
         auto* module_inst = static_cast<wasm_module_inst_t>(arg);
-        socket_listener(module_inst, response_port, INADDR_ANY);
+        socket_listener(response_port, INADDR_ANY);
         return nullptr;
     }, client_module_inst);
 
@@ -89,7 +89,7 @@ int main() {
       return 1;
     }
 
-    auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
 
     pthread_t c_th;
     if (!start_wasm_thread(client_module_inst, client_func, &c_th)) {
@@ -100,10 +100,10 @@ int main() {
     // wait for branches
     pthread_join(c_th, nullptr); 
     
-    auto end = std::chrono::high_resolution_clock::now();
-    double duration_us = std::chrono::duration<double, std::micro>(end - start).count();
+    // auto end = std::chrono::high_resolution_clock::now();
+    // double duration_us = std::chrono::duration<double, std::micro>(end - start).count();
 
-    std::cout << "[METRIC] Round-trip latency: " << duration_us << " us\n";
+    // std::cout << "[METRIC] Round-trip latency: " << duration_us << " us\n";
     // pthread_join(socket_thread, nullptr);  
 
     wasm_runtime_deinstantiate(client_module_inst);

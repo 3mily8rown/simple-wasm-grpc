@@ -1,4 +1,6 @@
 services:
+
+# Individual waasm server and client processes in separate containers
   server:
     image: ubuntu:24.04
     container_name: server_container
@@ -13,6 +15,9 @@ services:
       - NET_ADMIN
     env_file:
       - ./config/paths_docker.env
+    environment:
+      - SERVER_HOST=server_container
+      - CLIENT_HOST=client_container
 
   client:
     image: ubuntu:24.04
@@ -30,37 +35,27 @@ services:
       - NET_ADMIN
     env_file:
       - ./config/paths_docker.env
+    environment:
+      - SERVER_HOST=server_container
+      - CLIENT_HOST=client_container
 
-  cpp_server:
-    build:
-      context: ./baseline
-      dockerfile: Dockerfile.tc
-    container_name: cpp_server_container
+# wasm server and client *colocated* to use same wasm rpc host
+  wasm_rpc_host:
+    image: ubuntu:24.04
+    container_name: wasm_rpc_host_container
     volumes:
-      - ./baseline/build:/app
+      - ./build/native:/app
+      - ./build/wasm-prefix/src/wasm-build:/app/wasm
     working_dir: /app
-    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 5ms && ./native_server"]
+    command: ["./rpc_host"]
     networks:
       - testnet
     cap_add:
       - NET_ADMIN
+    env_file:
+      - ./config/paths_docker.env
 
-  cpp_client:
-    build:
-      context: ./baseline
-      dockerfile: Dockerfile.tc
-    container_name: cpp_client_container
-    volumes:
-      - ./baseline/build:/app
-    working_dir: /app
-    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 5ms && ./native_client"]
-    depends_on:
-      - cpp_server
-    networks:
-      - testnet
-    cap_add:
-      - NET_ADMIN
-
+# Wasm Server and client different processes same container - still networked so idk if this is useful
   wasm_single_vm:
     image: ubuntu:24.04
     container_name: wasm_single_vm_container
@@ -78,6 +73,44 @@ services:
     environment:
       - SERVER_HOST=127.0.0.1
       - CLIENT_HOST=127.0.0.1
+
+  # Baseline C++ server and client with traffic control
+  cpp_server:
+    build:
+      context: ./baseline
+      dockerfile: Dockerfile.tc
+    container_name: cpp_server_container
+    volumes:
+      - ./baseline/build:/app
+    working_dir: /app
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 5ms && ./native_server"]
+    networks:
+      - testnet
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - SERVER_HOST=cpp_server_container
+      - CLIENT_HOST=cpp_client_container
+
+
+  cpp_client:
+    build:
+      context: ./baseline
+      dockerfile: Dockerfile.tc
+    container_name: cpp_client_container
+    volumes:
+      - ./baseline/build:/app
+    working_dir: /app
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 5ms && ./native_client"]
+    depends_on:
+      - cpp_server
+    networks:
+      - testnet
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - SERVER_HOST=cpp_server_container
+      - CLIENT_HOST=cpp_client_container
 
 
 networks:

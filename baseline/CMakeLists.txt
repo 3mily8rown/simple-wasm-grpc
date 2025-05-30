@@ -52,3 +52,23 @@ target_link_libraries(native_client PRIVATE proto_nano)
 # Native server
 add_executable(native_server src/server_app.cpp)
 target_link_libraries(native_server PRIVATE proto_nano)
+
+# Native client same rpc
+add_executable(native_client_same src/client_app_wasm.cpp ../native/src/rpc/socket_communication.cpp
+    ../native/src/rpc/message_queue.cpp)
+target_link_libraries(native_client_same PRIVATE proto_nano)
+
+# Native server same rpc
+add_executable(native_server_same src/server_app_wasm.cpp ../native/src/rpc/socket_communication.cpp
+    ../native/src/rpc/message_queue.cpp)
+target_link_libraries(native_server_same PRIVATE proto_nano)
+
+# Add include path for shared socket code
+target_include_directories(native_client_same PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../native/include
+)
+
+target_include_directories(native_server_same PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../native/include
+)
+

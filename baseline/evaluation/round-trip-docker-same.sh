@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_file="metrics/rount_trip_cpp_log.txt"
+output_file="metrics/rount_trip_cpp_same_log.txt"
 echo "Run,Timestamp,Metric" > "$output_file"
 
 num_runs=10
@@ -10,7 +10,7 @@ for ((i=1; i<=num_runs; i++)); do
     echo "Starting run $i at $timestamp"
 
     # Run the containers (with tc simulated latency), capture output
-    output=$(docker compose up --build --abort-on-container-exit cpp_server cpp_client 2>&1)
+    output=$(docker compose up --build --abort-on-container-exit cpp_server_same cpp_client_same 2>&1)
 
     # Clean up containers to reset for next run
     docker compose down --volumes --remove-orphans

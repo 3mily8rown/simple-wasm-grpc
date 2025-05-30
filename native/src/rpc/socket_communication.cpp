@@ -8,10 +8,14 @@
 #include "rpc/message_queue.h"
 #include "rpc/socket_communication.h"
 
+static constexpr int MAX_CONNECT_ATTEMPTS = 5;
+static constexpr int MAX_SEND_ATTEMPTS    = 3;
+static constexpr int INITIAL_BACKOFF_MS   = 100;
+
 in_addr_t resolve_ip_or_throw(const char* hostname);
 
 
-void socket_listener(wasm_module_inst_t module_inst, int port, in_addr_t ip) {
+void socket_listener(int port, in_addr_t ip) {
     if (ip == INADDR_NONE) {
         ip = resolve_ip_or_throw(get_server_ip());  // or get_client_ip()
     }
@@ -59,12 +63,12 @@ void socket_listener(wasm_module_inst_t module_inst, int port, in_addr_t ip) {
     close(server_fd);
 }
 
-void socket_response_listener(wasm_module_inst_t module_inst, int port, in_addr_t ip) {
+void socket_response_listener(int port, in_addr_t ip) {
     if (ip == INADDR_NONE) {
         ip = resolve_ip_or_throw(get_client_ip());  // or get_client_ip()
     }
 
-    socket_listener(module_inst, port, ip);
+    socket_listener(port, ip);
 }
 
 void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint16_t port) {

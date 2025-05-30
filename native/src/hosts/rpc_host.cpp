@@ -4,7 +4,6 @@
 #include <string>
 #include <pthread.h>
 #include <wasm_export.h>
-#include <chrono>
 
 #include "wamr/load_module.h"
 #include "wasm/call_wasm.h"
@@ -71,6 +70,9 @@ int main() {
   
     register_all_env_symbols();
 
+    // local consumer and client online flags
+    colocated = true;
+
     // ------------------------------------------------------- load each module
   
     std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
@@ -104,7 +106,6 @@ int main() {
     }
 
     pthread_t c_th;
-    auto start_time = std::chrono::high_resolution_clock::now();
     if (!start_wasm_thread(client_module_inst, client_func, &c_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
@@ -125,11 +126,6 @@ int main() {
     // wait for branches
      
     pthread_join(c_th, nullptr);  
-    // stop timing after client finishes
-    auto end_time = std::chrono::high_resolution_clock::now();
-
-    double duration_us = std::chrono::duration<double, std::micro>(end_time - start_time).count();
-    printf("[METRIC] Client-server round-trip time: %.2f us\n", duration_us);
 
     pthread_join(s_th, nullptr); 
     return 0;

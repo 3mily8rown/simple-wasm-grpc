@@ -10,23 +10,28 @@ for ((i=1; i<=num_runs; i++)); do
     echo "Starting run $i at $timestamp"
 
     # Start server in background and capture its PID
-    cmake --build --preset=run-server &
+    ./build/native/server_host &
     server_pid=$!
 
     # Wait briefly or check server readiness (e.g., wait for open port)
     sleep 2
 
     # Run client and capture output
-    output=$(cmake --build --preset=run-client 2>&1)
+    output=$(./build/native/client_host 2>&1)
+
+    echo "=== run-client preset did this: ==="
+    printf '%s\n' "$output"
+    echo "==================================="
 
     # Kill server process cleanly after client finishes
     kill $server_pid
     wait $server_pid 2>/dev/null
 
     # Extract and log [METRIC] lines from client output
-    metric_lines=$(echo "$output" | grep "\[METRIC\]")
+    metric_lines=$(echo "$output" | grep -F "[METRICS]")
     while IFS= read -r line; do
-        metric_only=$(echo "$line" | sed 's/\[METRIC\] //')
+        # Strip "[METRICS] " prefix in pure bash:
+        metric_only=${line#*\] }
         echo "$i,$timestamp,$metric_only" >> "$output_file"
     done <<< "$metric_lines"
 

@@ -123,11 +123,16 @@ public:
     }
 };
 
+inline const char* get_server_ip() {
+    const char* ip = getenv("SERVER_HOST");
+    return ip ? ip : "cpp_server_container";  // fallback for Docker
+}
+
 int main() {
     printf("Client main function\n");
 
     // Connect to server on localhost:12345
-    RpcClient client("cpp_server_container", 12345);
+    RpcClient client(get_server_ip(), 12345);
 
     // Construct message
     MyMessage msg = MyMessage_init_default;

@@ -16,7 +16,7 @@ ExternalProject_Add(wasm
   CMAKE_ARGS
         -DCMAKE_TOOLCHAIN_FILE=${WASI_TOOLCHAIN_FILE}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DPROTO_DIR=${CMAKE_SOURCE_DIR}/wasm/proto_messages
+        -DPROTO_DIR=${CMAKE_SOURCE_DIR}/wasm/generated_nano
         -DIMPORTS_DIR=<INSTALL_DIR>/generated
         -DSCRIPT_DIR=${CMAKE_SOURCE_DIR}/host_tools/scripts
         -DPIGWEED_DIR=${CMAKE_SOURCE_DIR}/third_party/pigweed
