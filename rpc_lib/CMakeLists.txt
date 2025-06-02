@@ -56,6 +56,12 @@ install(TARGETS rpc_lib
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rpc_lib
 )
 
+install(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/generated_nano/"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/rpc_lib"
+  FILES_MATCHING PATTERN "*.h"
+)
+
 install(EXPORT rpcLibTargets
   NAMESPACE rpc_lib::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/rpc_lib

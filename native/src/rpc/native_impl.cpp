@@ -10,7 +10,8 @@
 #include <wasm_export.h>
 #include <atomic>
 
-#include "rpc/message_queue.h"
+// #include "rpc/message_queue.h"
+#include "ring_buffer_rpc/rb_message_queue.h"
 #include "rpc/socket_communication.h"
 #include "rpc/native_impl.h"
 

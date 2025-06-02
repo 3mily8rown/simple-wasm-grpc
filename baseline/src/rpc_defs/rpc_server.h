@@ -2,7 +2,6 @@
 #pragma once
 
 #include "rpc/socket_communication.h"   // socket_listener, send_response_over_socket
-#include "rpc/message_queue.h"          // dequeue_message, queue_response
 #include <thread>
 #include <atomic>
 #include <vector>

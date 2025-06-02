@@ -3,7 +3,7 @@
 output_file="metrics/round_trip_log_colocated_docker.txt"
 echo "Run,Timestamp,Metric" > "$output_file"
 
-num_runs=10  # Set how many runs you want
+num_runs=100  # Set how many runs you want
 
 for ((i=1; i<=num_runs; i++)); do
     timestamp=$(date +"%Y-%m-%dT%H:%M:%S")

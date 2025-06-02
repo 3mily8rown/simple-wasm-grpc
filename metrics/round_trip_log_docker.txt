@@ -1,13 +1,13 @@
 Run,Timestamp,Metric
-1,2025-05-31T15:05:13,client_container  | RTT = 6665μs
-2,2025-05-31T15:05:15,client_container  | RTT = 5903μs
-3,2025-05-31T15:05:17,client_container  | RTT = 4285μs
-4,2025-05-31T15:05:19,client_container  | RTT = 2981μs
-5,2025-05-31T15:05:21,client_container  | RTT = 5455μs
-6,2025-05-31T15:05:23,client_container  | RTT = 4361μs
-7,2025-05-31T15:05:25,client_container  | RTT = 6386μs
-8,2025-05-31T15:05:27,client_container  | RTT = 4853μs
-9,2025-05-31T15:05:29,client_container  | RTT = 5589μs
-10,2025-05-31T15:05:31,client_container  | RTT = 6538μs
+1,2025-06-02T11:38:09,
+2,2025-06-02T11:38:10,
+3,2025-06-02T11:38:11,
+4,2025-06-02T11:38:12,
+5,2025-06-02T11:38:13,
+6,2025-06-02T11:38:14,
+7,2025-06-02T11:38:15,
+8,2025-06-02T11:38:16,
+9,2025-06-02T11:38:17,
+10,2025-06-02T11:38:18,
 Total measurements: 10
-Average RTT: 5301.60 μs
+Average RTT: 0.00 μs

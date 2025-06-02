@@ -41,6 +41,8 @@ int main() {
     std::printf("[Client] Ack success=%d info=\"%s\"\n", ack.success, ack.info);
     uint32_t rtt = static_cast<uint32_t>(t1 - t0);
     // Send the RTT back to the host
+    std::printf("[Client] RTT: %u us\n", rtt);
+    fflush(stdout);
     send_rtt(rtt);
 
     return 0;

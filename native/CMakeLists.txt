@@ -10,6 +10,7 @@ file(GLOB_RECURSE WASM_SOURCES "src/wasm/*.cpp")
 
 set(SHARED_SOURCES
   ${RPC_SOURCES}
+  src/ring_buffer_rpc/rb_message_queue.cpp
   ${WAMR_SOURCES}
   ${WASM_SOURCES}
 )
@@ -25,6 +26,7 @@ foreach(HOST ${HOST_NAMES})
 
   target_include_directories(${HOST} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ring_buffer_rpc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/rpc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/wamr"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/wasm"

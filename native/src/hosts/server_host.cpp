@@ -42,7 +42,7 @@ int main() {
     // debugger needs larger stack? Get Native stack overflow error when configured cmake with debug
     uint32_t buf_size, stack_size = 8092, heap_size = 8092;
   
-    static char global_heap_buf[512 * 1024];
+    static char global_heap_buf[1024 * 1024];
     RuntimeInitArgs init_args;
   
     memset(&init_args, 0, sizeof(RuntimeInitArgs));

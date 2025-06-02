@@ -3,6 +3,10 @@ services:
 # Individual waasm server and client processes in separate containers
   server:
     image: ubuntu:24.04
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
     container_name: server_container
     volumes:
       - ./build/native:/app
@@ -18,9 +22,16 @@ services:
     environment:
       - SERVER_HOST=server_container
       - CLIENT_HOST=client_container
+    security_opt:
+      - seccomp=unconfined
+    privileged: true
+
 
   client:
     image: ubuntu:24.04
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: client_container
     volumes:
       - ./build/native:/app
@@ -38,6 +49,11 @@ services:
     environment:
       - SERVER_HOST=server_container
       - CLIENT_HOST=client_container
+    security_opt:
+      - seccomp=unconfined
+    privileged: true
+
+
 
 # wasm server and client *colocated* to use same wasm rpc host
   wasm_rpc_host:
@@ -83,7 +99,7 @@ services:
     volumes:
       - ./baseline/build:/app
     working_dir: /app
-    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 5ms 2ms && ./native_server_same"]
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 0ms && ./native_server_same"]
     networks:
       - testnet
     cap_add:

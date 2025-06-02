@@ -1,6 +1,7 @@
 // rpc_server.cpp
 #include "rpc_server.h"
-#include "rpc/message_queue.h"          // dequeue_message
+#include "ring_buffer_rpc/rb_message_queue.h"          // dequeue_message
+// #include "rpc/message_queue.h"          // dequeue_message
 #include "rpc/socket_communication.h"   // socket_listener(), send_response_over_socket()
 #include <chrono>
 

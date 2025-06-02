@@ -1,7 +1,8 @@
 // rpc_client.cpp
 #include "rpc_client.h"
 #include "rpc/socket_communication.h"   // socket_response_listener()
-#include "rpc/message_queue.h"          // dequeue_response(), queue_message()
+#include "ring_buffer_rpc/rb_message_queue.h"          // dequeue_response(), queue_message()
+// #include "rpc/message_queue.h"          // dequeue_response(), queue_message()
 #include <chrono>
 #include <thread>
 #include <cstdio>

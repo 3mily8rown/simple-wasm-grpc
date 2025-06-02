@@ -7,7 +7,8 @@
 #include <chrono>
 #include <thread>
 
-#include "rpc/message_queue.h"
+// #include "rpc/message_queue.h"
+#include "ring_buffer_rpc/rb_message_queue.h"
 #include "rpc/socket_communication.h"
 
 static constexpr int MAX_CONNECT_ATTEMPTS = 5;

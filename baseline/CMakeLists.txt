@@ -16,6 +16,7 @@ add_library(nanopb::nanopb ALIAS protobuf-nanopb-static)
 
 # ——— Proto library ———
 set(GENERATED_PB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build/wasm-prefix/src/wasm-build/generated_nano")
+set(GENERATED_ENVELOPE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rpc_lib/src/generated_nano")
 set(NANOPB_SOURCE_DIR "${nanopb_SOURCE_DIR}")
 set(NANOPB_SOURCES
   ${NANOPB_SOURCE_DIR}/pb_encode.c
@@ -24,7 +25,7 @@ set(NANOPB_SOURCES
 )
 set(PROTO_SOURCES
   "${GENERATED_PB_DIR}/message.pb.c"
-  "${GENERATED_PB_DIR}/rpc_envelope.pb.c"
+  "${GENERATED_ENVELOPE_DIR}/rpc_envelope.pb.c"
 )
 add_library(proto_nano STATIC
   ${PROTO_SOURCES}
@@ -32,6 +33,7 @@ add_library(proto_nano STATIC
 )
 target_include_directories(proto_nano PUBLIC
   ${GENERATED_PB_DIR}
+  ${GENERATED_ENVELOPE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(proto_nano PUBLIC nanopb::nanopb)
@@ -40,6 +42,7 @@ target_link_libraries(proto_nano PUBLIC nanopb::nanopb)
 file(GLOB RPC_PRIMITIVES_SRCS
   ../native/src/rpc/socket_communication.cpp
   ../native/src/rpc/message_queue.cpp
+  ../native/src/ring_buffer_rpc/rb_message_queue.cpp
   src/rpc_defs/rpc_client.cpp       # <-- make sure this is the correct path
   src/rpc_defs/rpc_server.cpp       # <-- if you have a server impl here too
 )
