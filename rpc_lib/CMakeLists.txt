@@ -113,6 +113,7 @@ target_include_directories(rpc_lib
     # Protoc plugins usually generate files to avoid needing this v
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../wasm/generated_nano>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated_nano>
+    $<INSTALL_INTERFACE:include/rpc_lib>
 
 )
 
@@ -140,10 +141,11 @@ install(TARGETS rpc_lib
 )
 
 install(
-  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/generated_nano/"
+  DIRECTORY "${CMAKE_BINARY_DIR}/generated_nano/"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/rpc_lib"
   FILES_MATCHING PATTERN "*.h"
 )
+
 
 install(EXPORT rpcLibTargets
   NAMESPACE rpc_lib::

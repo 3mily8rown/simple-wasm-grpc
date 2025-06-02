@@ -1,5 +1,4 @@
-RpcEnvelope.method max_size: 64
-RpcEnvelope.payload max_size: 256
+SendMessage.name               max_size:32
+SendMessageResponse.info       max_size:64
 
-RpcResponse.payload max_size: 256
-RpcResponse.status max_size: 64
+ProcessFloats.num              max_count:16
