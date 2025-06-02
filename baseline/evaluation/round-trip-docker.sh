@@ -1,9 +1,9 @@
 #!/bin/bash
 
-output_file="metrics/round_trip_cpp_same_docker_log_0ms.txt"
+output_file="metrics/round_trip_cpp_same_docker_log_xms_xms.txt"
 echo "Run,Timestamp,Metric" > "$output_file"
 
-num_runs=10
+num_runs=20
 
 for ((i=1; i<=num_runs; i++)); do
     timestamp=$(date +"%Y-%m-%dT%H:%M:%S")

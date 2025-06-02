@@ -26,6 +26,10 @@ services:
     security_opt:
       - seccomp=unconfined
     privileged: true
+    cpuset: "2"           # Bind container to CPU core 2
+    cpu_period: 100000    # Set time period (100ms)
+    cpu_quota: 100000     # Allow 100ms of CPU time = 1 full core
+    mem_limit: 1g         # Optional: cap memory to 1 GB
 
 
   client:
@@ -54,6 +58,10 @@ services:
     security_opt:
       - seccomp=unconfined
     privileged: true
+    cpuset: "3"           # Bind container to CPU core 2
+    cpu_period: 100000    # Set time period (100ms)
+    cpu_quota: 100000     # Allow 100ms of CPU time = 1 full core
+    mem_limit: 1g         # Optional: cap memory to 1 GB
 
 
 
@@ -73,6 +81,12 @@ services:
       - NET_ADMIN
     env_file:
       - ./config/paths_docker.env
+    cpuset: "2,3"
+    cpu_period: 100000
+    cpu_quota: 200000  # 2 full cores
+    mem_limit: 1g
+
+
 
 # Wasm Server and client different processes same container - still networked so idk if this is useful
   wasm_single_vm:
@@ -92,6 +106,10 @@ services:
     environment:
       - SERVER_HOST=127.0.0.1
       - CLIENT_HOST=127.0.0.1
+    cpuset: "2,3"           # Bind container to CPU core 2
+    cpu_period: 100000    # Set time period (100ms)
+    cpu_quota: 200000     # Allow 100ms of CPU time = 1 full core
+    mem_limit: 1g         # Optional: cap memory to 1 GB
 
   # Baseline C++ server and client with traffic control
   cpp_server:
@@ -102,7 +120,7 @@ services:
     volumes:
       - ./baseline/build:/app
     working_dir: /app
-    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 0ms && ./native_server_same"]
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 1ms 1ms && ./native_server_same"]
     networks:
       - testnet
     cap_add:
@@ -110,6 +128,10 @@ services:
     environment:
       - SERVER_HOST=cpp_server_container
       - CLIENT_HOST=cpp_client_container
+    cpuset: "2"           # Bind container to CPU core 2
+    cpu_period: 100000    # Set time period (100ms)
+    cpu_quota: 100000     # Allow 100ms of CPU time = 1 full core
+    mem_limit: 1g         # Optional: cap memory to 1 GB
 
 
   cpp_client:
@@ -120,7 +142,7 @@ services:
     volumes:
       - ./baseline/build:/app
     working_dir: /app
-    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 0ms && ./native_client_same"]
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 1ms 1ms && ./native_client_same"]
     depends_on:
       - cpp_server
     networks:
@@ -130,6 +152,33 @@ services:
     environment:
       - SERVER_HOST=cpp_server_container
       - CLIENT_HOST=cpp_client_container
+    cpuset: "3"           # Bind container to CPU core 2
+    cpu_period: 100000    # Set time period (100ms)
+    cpu_quota: 100000     # Allow 100ms of CPU time = 1 full core
+    mem_limit: 1g         # Optional: cap memory to 1 GB
+
+# cpp Server and client different processes same container
+  cpp_single_vm:
+    image: ubuntu:24.04
+    container_name: cpp_single_vm_container
+    volumes:
+      - ./baseline/build:/app
+    working_dir: /app
+    command: ["/bin/bash", "-c", "./native_server_same && ./native_client_same"]
+    # command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 0ms && ./native_server_same && sleep 1 && ./native_client_same"]
+    networks:
+      - testnet
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - ./config/paths_docker.env
+    environment:
+      - SERVER_HOST=127.0.0.1
+      - CLIENT_HOST=127.0.0.1
+    cpuset: "2,3"           # Bind container to CPU core 2
+    cpu_period: 100000    # Set time period (100ms)
+    cpu_quota: 200000     # Allow 100ms of CPU time = 1 full core
+    mem_limit: 1g         # Optional: cap memory to 1 GB
 
 
 networks:
