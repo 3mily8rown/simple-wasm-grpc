@@ -22,3 +22,5 @@ void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset,
 int64_t get_time_us(wasm_exec_env_t exec_env);
 
 void send_rtt(wasm_exec_env_t exec_env, uint32_t time_us);
+
+void send_total(wasm_exec_env_t exec_env, uint32_t time_us, uint32_t count);

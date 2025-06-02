@@ -120,6 +120,51 @@ public:
         return msg_len;
     }
 
+    uint32_t dequeue_with_timeout(uint8_t* dest, uint32_t max_length, int timeout_ms) {
+        std::unique_lock<std::mutex> lock(_mutex);
+
+        if (!_cv.wait_for(lock, std::chrono::milliseconds(timeout_ms), [&]() {
+            return (_head != _tail);
+        })) {
+            return uint32_t(-1); // timeout waiting for header
+        }
+
+        uint8_t hdr[4];
+        uint32_t next = copy_from_ring(_tail, hdr, 4);
+        uint32_t msg_len =
+            (uint32_t)hdr[0]
+        | ((uint32_t)hdr[1] << 8)
+        | ((uint32_t)hdr[2] << 16)
+        | ((uint32_t)hdr[3] << 24);
+
+        if (msg_len > _capacity - sizeof(uint32_t)) {
+            throw std::runtime_error("RingBuffer::dequeue_with_timeout: invalid message length");
+        }
+
+        uint32_t total_size = sizeof(uint32_t) + msg_len;
+        if (!_cv.wait_for(lock, std::chrono::milliseconds(timeout_ms), [&]() {
+            return calculate_used_space_locked() >= total_size;
+        })) {
+            return uint32_t(-1); // timeout waiting for full message
+        }
+
+        uint32_t to_copy = (msg_len <= max_length ? msg_len : max_length);
+        next = copy_from_ring(next, dest, to_copy);
+
+        uint32_t skip = msg_len - to_copy;
+        if (skip > 0) {
+            if (next + skip < _capacity) {
+                next += skip;
+            } else {
+                next = (next + skip) - _capacity;
+            }
+        }
+
+        _tail = next;
+        return msg_len;
+    }
+
+
 private:
     // CALLED WITH _mutex HELD
     uint32_t calculate_free_space_locked() const {
@@ -240,4 +285,8 @@ void queue_response(const uint8_t* data, uint32_t length) {
 // Returns the actual payload length.
 uint32_t dequeue_response(uint8_t* dest, uint32_t max_length) {
     return g_response_rb.dequeue(dest, max_length);
+}
+
+int32_t dequeue_message_with_timeout(uint8_t* dest, uint32_t max_length, int timeout_ms) {
+    return g_request_rb.dequeue_with_timeout(dest, max_length, timeout_ms);
 }

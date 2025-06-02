@@ -51,7 +51,7 @@ int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t m
         return 0;
     }
 
-    return dequeue_message(dest, max_length);
+    return dequeue_message_with_timeout(dest, max_length, 3000);
 }
 
 void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length) {
@@ -96,4 +96,9 @@ int64_t get_time_us(wasm_exec_env_t exec_env) {
 
 void send_rtt(wasm_exec_env_t exec_env, uint32_t time_us) {
     std::cout << "[METRICS] RTT = " << time_us << "μs" << std::endl;
+}
+
+void send_total(wasm_exec_env_t exec_env, uint32_t time_us, uint32_t count) {
+    uint32_t throughput = (count > 0) ? (time_us / count) : 0;
+    std::cout << "[METRICS] THROUGHPUT = " << throughput << "μs" << std::endl;
 }

@@ -29,7 +29,7 @@ public:
     void RegisterHandler(const std::string& method, HandlerFn handler);
 
     // Blocks waiting for one incoming envelope, dispatches to the right handler.
-    void ProcessNextRequest();
+    bool ProcessNextRequest();
 
     void sendResponse(const RpcResponse& resp);
 

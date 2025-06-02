@@ -12,19 +12,20 @@ RpcServer::Buffer RpcServer::alloc_buffer(uint32_t max_size) {
     return { ptr, ptr ? max_size : 0 };
 }
 
-void RpcServer::ProcessNextRequest() {
+bool RpcServer::ProcessNextRequest() {
     // 1) Grab a buffer from the WASM heap
     Buffer buf = alloc_buffer(512);
     if (!buf.data) {
         std::fprintf(stderr, "[Server] malloc failed\n");
-        return;
+        return false;
     }
 
     // 2) Receive the raw bytes
     int32_t len = receive_rpcmessage((uint32_t)buf.data, buf.size);
     if (len <= 0) {
+        std::printf("[Server] Timeout reached. No message received.\n");
         std::free(buf.data);
-        return;
+        return false;
     }
 
     // 3) Decode the outer envelope
@@ -33,7 +34,7 @@ void RpcServer::ProcessNextRequest() {
     if (!pb_decode(&istream, RpcEnvelope_fields, &env)) {
         std::fprintf(stderr, "[Server] Envelope decode error: %s\n", PB_GET_ERROR(&istream));
         std::free(buf.data);
-        return;
+        return false;
     }
 
     // 4) Dispatch to the registered handler
@@ -48,6 +49,7 @@ void RpcServer::ProcessNextRequest() {
 
     // 5) Free the receive buffer
     std::free(buf.data);
+    return true;
 }
 
 void RpcServer::sendResponse(const RpcResponse& resp) {

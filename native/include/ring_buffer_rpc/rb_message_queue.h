@@ -11,4 +11,6 @@ uint32_t dequeue_message(uint8_t* dest, uint32_t max_length);
 void queue_response(const uint8_t* data, uint32_t length);
 uint32_t dequeue_response(uint8_t* dest, uint32_t max_length);
 
+int32_t dequeue_message_with_timeout(uint8_t* dest, uint32_t max_length, int timeout_ms);
+
 #endif // RPC_MESSAGE_QUEUE_H

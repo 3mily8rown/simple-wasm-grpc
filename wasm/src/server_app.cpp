@@ -45,6 +45,8 @@ int main() {
     );
 
     // Process one incoming call (or wrap in a loop)
-    server.ProcessNextRequest();
+    while(server.ProcessNextRequest()) {
+        // You can add a sleep or yield here if needed
+    }
     return 0;
 }
