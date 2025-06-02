@@ -8,7 +8,7 @@ bool RpcClient::Send(const char* method,
                      const pb_msgdesc_t* fields)
 {
     // 1) Encode the payload
-    uint8_t payload_buf[128];
+    uint8_t payload_buf[1024];
     pb_ostream_t payload_stream = pb_ostream_from_buffer(payload_buf, sizeof(payload_buf));
     if (!pb_encode(&payload_stream, fields, message)) {
         std::fprintf(stderr, "Payload encode error: %s\n", PB_GET_ERROR(&payload_stream));
@@ -22,7 +22,7 @@ bool RpcClient::Send(const char* method,
     env.payload.size = payload_stream.bytes_written;
 
     // 3) Encode the envelope
-    uint8_t envelope_buf[256];
+    uint8_t envelope_buf[2048];
     pb_ostream_t env_stream = pb_ostream_from_buffer(envelope_buf, sizeof(envelope_buf));
     if (!pb_encode(&env_stream, RpcEnvelope_fields, &env)) {
         std::fprintf(stderr, "Envelope encode error: %s\n", PB_GET_ERROR(&env_stream));
