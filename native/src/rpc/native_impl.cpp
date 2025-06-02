@@ -28,13 +28,13 @@ int32_t send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t leng
         return -1;
     }
     if (g_local_consumer_online.load(std::memory_order_acquire)) {
-        printf("Local server is online, sending message...\n");
+        // printf("Local server is online, sending message...\n");
         queue_message(src, length);
     } else if (colocated) {
-        printf("Colocated environment detected, server not ready...\n");
+        // printf("Colocated environment detected, server not ready...\n");
         queue_message(src, length);
     } else {
-        printf("Local server is offline, sending over socket...\n");
+        // printf("Local server is offline, sending over socket...\n");
         send_over_socket(src, length);
     }    
     return 0;
@@ -63,13 +63,13 @@ void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length
         return;
     }
     if (g_local_client_online.load(std::memory_order_acquire)) {
-        printf("Local client is online, sending message...\n");
+        // printf("Local client is online, sending message...\n");
         queue_response(src, length);
     } else if (colocated) {
-        printf("Colocated environment detected, client not ready...\n");
+        // printf("Colocated environment detected, client not ready...\n");
         queue_response(src, length);
     } else {
-        printf("Local client is offline, sending over socket...\n");
+        // printf("Local client is offline, sending over socket...\n");
         send_response_over_socket(src, length);
     }    
 }

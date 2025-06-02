@@ -4,7 +4,7 @@
 #include "message.pb.h"
 
 int main() {
-    std::printf("Server starting…\n");
+    // std::printf("Server starting…\n");
 
     RpcServer server;
 
@@ -19,7 +19,7 @@ int main() {
                 return false;
             }
 
-            std::printf("[Server] Got id=%u name=\"%s\"\n", msg.id, msg.name);
+            // std::printf("[Server] Got id=%u name=\"%s\"\n", msg.id, msg.name);
 
             // Build an Ack
             Ack ack = Ack_init_zero;

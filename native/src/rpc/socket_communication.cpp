@@ -45,7 +45,7 @@ void socket_listener(int port, in_addr_t ip) {
         perror("[Native] listen");
         exit(1);
     }
-    std::cout << "[Native] Host listening on port " << port << "...\n";
+    // std::cout << "[Native] Host listening on port " << port << "...\n";
 
     // 3) Accept loop
     while (true) {
@@ -62,10 +62,10 @@ void socket_listener(int port, in_addr_t ip) {
             std::cout << "[Native] Received " << n << " bytes on port " << port << "\n";
             if (port == message_port) {
                 queue_message(buffer, n);
-                std::cout << "[Native] Queued message for server\n";
+                // std::cout << "[Native] Queued message for server\n";
             } else if (port == response_port) {
                 queue_response(buffer, n);
-                std::cout << "[Native] Queued response for client\n";
+                // std::cout << "[Native] Queued response for client\n";
             } else {
                 std::cerr << "[Native] Unknown port: " << port << "\n";
             }
@@ -113,7 +113,7 @@ bool try_connect_with_retry(int sock,
 }
 
 void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint16_t port) {
-    std::cout << "[Native] Sending to " << ip << ":" << port << "\n";
+    // std::cout << "[Native] Sending to " << ip << ":" << port << "\n";
 
     std::string tag = (port == message_port) ? "[Client] " : "[Server] ";
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -136,9 +136,9 @@ void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint
 
 
 
-    std::cout << tag << " [Native] Attempting to connect to " << ip << ":" << port << "\n";
+    // std::cout << tag << " [Native] Attempting to connect to " << ip << ":" << port << "\n";
     bool result = try_connect_with_retry(sock, &server_addr, sizeof(server_addr), tag);
-    std::cout << "[Native] connect() returned " << result << "\n";
+    // std::cout << "[Native] connect() returned " << result << "\n";
 
     // if (result < 0) {
     if (!result) {

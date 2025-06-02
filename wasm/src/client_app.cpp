@@ -10,7 +10,7 @@ extern "C" {
 
 // Client that sends a nanopb message to a server and waits for a message response.
 int main() {
-    std::printf("Client starting…\n");
+    // std::printf("Client starting…\n");
     RpcClient client;
 
     // Build your message
@@ -38,11 +38,11 @@ int main() {
     }
     int64_t t1 = get_time_us();
 
-    std::printf("[Client] Ack success=%d info=\"%s\"\n", ack.success, ack.info);
+    // std::printf("[Client] Ack success=%d info=\"%s\"\n", ack.success, ack.info);
     uint32_t rtt = static_cast<uint32_t>(t1 - t0);
     // Send the RTT back to the host
-    std::printf("[Client] RTT: %u us\n", rtt);
-    fflush(stdout);
+    // std::printf("[Client] RTT: %u us\n", rtt);
+    // fflush(stdout);
     send_rtt(rtt);
 
     return 0;

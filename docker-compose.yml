@@ -10,7 +10,8 @@ services:
     container_name: server_container
     volumes:
       - ./build/native:/app
-      - ./build/wasm-prefix/src/wasm-build:/app/wasm
+      # - ./build/wasm-prefix/src/wasm-build:/app/wasm
+      - ./build/install/wasm:/app/wasm
     working_dir: /app
     command: ["./server_host"]
     networks:
@@ -35,7 +36,8 @@ services:
     container_name: client_container
     volumes:
       - ./build/native:/app
-      - ./build/wasm-prefix/src/wasm-build:/app/wasm
+      # - ./build/wasm-prefix/src/wasm-build:/app/wasm
+      - ./build/install/wasm:/app/wasm
     working_dir: /app
     command: ["./client_host"]
     depends_on:
@@ -61,7 +63,8 @@ services:
     container_name: wasm_rpc_host_container
     volumes:
       - ./build/native:/app
-      - ./build/wasm-prefix/src/wasm-build:/app/wasm
+      # - ./build/wasm-prefix/src/wasm-build:/app/wasm
+      - ./build/install/wasm:/app/wasm
     working_dir: /app
     command: ["./rpc_host"]
     networks:

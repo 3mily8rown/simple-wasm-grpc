@@ -75,6 +75,7 @@ int main() {
 
     // ------------------------------------------------------- load each module
   
+    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.aot";
     std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
     auto client_buffer = readFileToBytes(client_wasm_path);
   
@@ -86,6 +87,7 @@ int main() {
 
     // ----------------
 
+    // std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.aot";
     std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.wasm";
     auto server_buffer = readFileToBytes(server_wasm_path);
   
