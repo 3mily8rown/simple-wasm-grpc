@@ -13,24 +13,107 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(nanopb)
 add_library(nanopb::nanopb ALIAS protobuf-nanopb-static)
 
+# -----------------------------------------------------------------
+# protoc
+# -----------------------------------------------------------------
+set(VENV_DIR "${CMAKE_BINARY_DIR}/nanopb_venv")
+set(VENV_PYTHON "${VENV_DIR}/bin/python")
+set(VENV_CREATED_MARKER "${VENV_DIR}/.created")
+
+# Only create the venv + install protobuf once
+add_custom_command(
+  OUTPUT "${VENV_CREATED_MARKER}"
+  COMMAND python3 -m venv "${VENV_DIR}"
+  COMMAND "${VENV_PYTHON}" -m pip install --upgrade pip
+  COMMAND "${VENV_PYTHON}" -m pip install protobuf==3.20.3
+  COMMAND ${CMAKE_COMMAND} -E touch "${VENV_CREATED_MARKER}"
+  COMMENT "Creating temporary virtual environment and installing protobuf==3.20.3"
+)
+
+add_custom_target(nano_venv DEPENDS "${VENV_CREATED_MARKER}")
+
+# Path to your .proto files
+set(PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
+
+find_program(SYSTEM_PROTOC protoc)
+if(NOT SYSTEM_PROTOC)
+  message(FATAL_ERROR "protoc not found; please install protobuf-compiler")
+endif()
+
+# # Wrapper script so protoc finds the generator in the venv
+# set(WRAP "${CMAKE_BINARY_DIR}/protoc-gen-nanopb")
+# file(WRITE  "${WRAP}"
+#   "#!/usr/bin/env bash\nexec \"${VENV}/bin/python\" \"${nanopb_SOURCE_DIR}/generator/nanopb_generator.py\" --protoc-plugin \"$@\"")
+# file(CHMOD "${WRAP}" PERMISSIONS
+#      OWNER_READ OWNER_WRITE OWNER_EXECUTE
+#      GROUP_READ GROUP_EXECUTE
+#      WORLD_READ WORLD_EXECUTE)
+set(WRAP "${CMAKE_BINARY_DIR}/protoc-gen-nanopb")
+file(WRITE "${WRAP}"
+  "#!/usr/bin/env bash\n"
+  "exec \"${VENV_PYTHON}\" \"${nanopb_SOURCE_DIR}/generator/nanopb_generator.py\" --protoc-plugin \"$@\""
+)
+file(CHMOD "${WRAP}" PERMISSIONS
+  OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  GROUP_READ GROUP_EXECUTE
+  WORLD_READ WORLD_EXECUTE)
+
+
+
+set(GEN "${CMAKE_BINARY_DIR}/generated_nano")
+file(MAKE_DIRECTORY "${GEN}")
+
+# generate rpc_envelope.pb.{c,h} ----------
+add_custom_command(
+    OUTPUT  "${GEN}/rpc_envelope.pb.c" "${GEN}/rpc_envelope.pb.h"
+    WORKING_DIRECTORY "${PROTO_DIR}" 
+    COMMAND "${SYSTEM_PROTOC}"
+            --plugin=protoc-gen-nanopb=${WRAP}
+            --proto_path="${PROTO_DIR}"
+            --proto_path="${nanopb_SOURCE_DIR}/generator/proto"
+            --nanopb_out="${GEN}"
+            "rpc_envelope.proto"
+    DEPENDS
+        "${PROTO_DIR}/rpc_envelope.proto"
+        "${PROTO_DIR}/rpc_envelope.options"
+        nano_venv)
+
+
+add_custom_target(generate_protos
+  DEPENDS
+    "${GEN}/rpc_envelope.pb.c"
+    "${GEN}/rpc_envelope.pb.h"
+)
+
+# -------------------------------
+
 # 2) Build the RPC library
+# add_library(rpc_lib STATIC
+#   # your implementation
+#   src/rpc_client.cpp
+#   src/rpc_server.cpp
+
+#   # the pregenerated envelope/response stubs
+#   src/generated_nano/rpc_envelope.pb.c
+# )
 add_library(rpc_lib STATIC
-  # your implementation
   src/rpc_client.cpp
   src/rpc_server.cpp
-
-  # the pregenerated envelope/response stubs
-  src/generated_nano/rpc_envelope.pb.c
+  "${GEN}/rpc_envelope.pb.c"
 )
+
+add_dependencies(rpc_lib generate_protos)
 
 # 3) Public include dirs
 target_include_directories(rpc_lib
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/generated_nano>
+    # $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/generated_nano>
     # Protoc plugins usually generate files to avoid needing this v
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../wasm/generated_nano>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated_nano>
+
 )
 
 # 4) Link in nanopb runtime
