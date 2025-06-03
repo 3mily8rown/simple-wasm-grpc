@@ -4,6 +4,8 @@ include(ExternalProject)
 
 # TODO: set this to your WASI SDK path
 set(WASI_TOOLCHAIN_FILE "/home/eb/fyp/wasi-sdk-25.0-x86_64-linux/share/cmake/wasi-sdk.cmake")
+set(WAMRC_EXECUTABLE "/home/eb/fyp/wasm-micro-runtime/wamr-compiler/build/wamrc")
+
 
 # -----------------------------------------------------------------
 # wasm (needs protoc for proto messages)
@@ -19,7 +21,7 @@ ExternalProject_Add(wasm
         -DPROTO_DIR=${CMAKE_SOURCE_DIR}/wasm/generated_nano
         -DIMPORTS_DIR=<INSTALL_DIR>/generated
         -DSCRIPT_DIR=${CMAKE_SOURCE_DIR}/host_tools/scripts
-        -DPIGWEED_DIR=${CMAKE_SOURCE_DIR}/third_party/pigweed
+        -DWAMRC_EXECUTABLE=${WAMRC_EXECUTABLE}
 
   UPDATE_COMMAND ""
   BUILD_ALWAYS 1

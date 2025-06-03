@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(wasm_mod LANGUAGES C CXX)
 
 # ---------- variables supplied by the super-build
-foreach(var PROTO_DIR SCRIPT_DIR)
+foreach(var PROTO_DIR SCRIPT_DIR WAMRC_EXECUTABLE)
     if(NOT DEFINED ${var})
         message(FATAL_ERROR "${var} not set")
     endif()
@@ -136,4 +136,39 @@ add_custom_command(
 add_custom_target(generate_import_headers ALL
   DEPENDS ${CLIENT_HDR} ${SERVER_HDR}
 )
+
+# AOT output paths
+set(CLIENT_AOT "${CMAKE_BINARY_DIR}/client_app.aot")
+set(CLIENT2_AOT "${CMAKE_BINARY_DIR}/client_app2.aot")
+set(SERVER_AOT "${CMAKE_BINARY_DIR}/server_app.aot")
+
+# Compile .wasm to .aot
+add_custom_command(
+  OUTPUT ${CLIENT_AOT}
+  COMMAND ${WAMRC_EXECUTABLE} -o ${CLIENT_AOT} $<TARGET_FILE:client_app>
+  DEPENDS client_app
+  COMMENT "Compiling client_app.wasm to AOT"
+)
+
+add_custom_command(
+  OUTPUT ${CLIENT2_AOT}
+  COMMAND ${WAMRC_EXECUTABLE} -o ${CLIENT2_AOT} $<TARGET_FILE:client_app2>
+  DEPENDS client_app2
+  COMMENT "Compiling client_app2.wasm to AOT"
+)
+
+add_custom_command(
+  OUTPUT ${SERVER_AOT}
+  COMMAND ${WAMRC_EXECUTABLE} -o ${SERVER_AOT} $<TARGET_FILE:server_app>
+  DEPENDS server_app
+  COMMENT "Compiling server_app.wasm to AOT"
+)
+
+# Group into an "aot_modules" target so it's built automatically
+add_custom_target(aot_modules ALL
+  DEPENDS ${CLIENT_AOT} ${CLIENT2_AOT} ${SERVER_AOT}
+)
+
+# Install the AOT files as well
+install(FILES ${CLIENT_AOT} ${CLIENT2_AOT} ${SERVER_AOT} DESTINATION wasm)
 

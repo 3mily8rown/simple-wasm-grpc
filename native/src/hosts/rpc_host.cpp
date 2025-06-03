@@ -83,8 +83,8 @@ int main() {
 
     // ------------------------------------------------------- load each module
   
-    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.aot";
-    std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
+    std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.aot";
+    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
     auto client_buffer = readFileToBytes(client_wasm_path);
   
     // load module and create execution environment
@@ -94,8 +94,8 @@ int main() {
     }
 
     // second client
-    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app2.aot";
-    std::string client_wasm_path2 = Config::get("WASM_OUT") + "/client_app2.wasm";
+    std::string client_wasm_path2 = Config::get("WASM_OUT") + "/client_app2.aot";
+    // std::string client_wasm_path2 = Config::get("WASM_OUT") + "/client_app2.wasm";
     auto client_buffer2 = readFileToBytes(client_wasm_path2);
   
     // load module and create execution environment
@@ -106,8 +106,8 @@ int main() {
 
     // ----------------
 
-    // std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.aot";
-    std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.wasm";
+    std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.aot";
+    // std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.wasm";
     auto server_buffer = readFileToBytes(server_wasm_path);
   
     // load module and create execution environment
@@ -118,8 +118,8 @@ int main() {
 
     // ----------------second server
 
-    // std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.aot";
-    std::string server_wasm_path2 = Config::get("WASM_OUT") + "/server_app.wasm";
+    std::string server_wasm_path2 = Config::get("WASM_OUT") + "/server_app.aot";
+    // std::string server_wasm_path2 = Config::get("WASM_OUT") + "/server_app.wasm";
     auto server_buffer2 = readFileToBytes(server_wasm_path2);
   
     // load module and create execution environment

@@ -59,8 +59,8 @@ int main() {
 
     // ------------------------------------------------------- load each module
   
-    std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
-    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.aot";
+    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
+    std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.aot";
     auto client_buffer = readFileToBytes(client_wasm_path);
   
     // load module and create execution environment
