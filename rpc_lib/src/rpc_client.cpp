@@ -89,8 +89,10 @@ bool RpcClient::send(uint32_t request_id, uint32_t payload_tag, const void* mess
             return false;
     }
 
+    // shift the buffer to leave space for the request ID
     uint8_t buf[1024];
-    pb_ostream_t stream = pb_ostream_from_buffer(buf, sizeof(buf));
+    pb_ostream_t stream = pb_ostream_from_buffer(buf + 4, sizeof(buf) - 4);
+
     if (!pb_encode(&stream, RpcEnvelope_fields, &env)) {
         std::fprintf(stderr, "RpcEnvelope encode error: %s\n", PB_GET_ERROR(&stream));
         return false;
@@ -103,8 +105,9 @@ bool RpcClient::send(uint32_t request_id, uint32_t payload_tag, const void* mess
         return false;
     }
 
-    std::memcpy(wasm_buf, buf, len);
-    int32_t rc = send_rpcmessage(reinterpret_cast<uint32_t>(wasm_buf), len);
+    std::memset(wasm_buf, 0, 4);
+    std::memcpy(wasm_buf + 4, buf + 4, len);
+    int32_t rc = send_rpcmessage(reinterpret_cast<uint32_t>(wasm_buf), len + 4);
     std::free(wasm_buf);
 
     return rc >= 0;

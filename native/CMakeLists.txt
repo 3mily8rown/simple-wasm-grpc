@@ -7,10 +7,11 @@ project(MultiHostRPC C CXX)
 file(GLOB_RECURSE RPC_SOURCES "src/rpc/*.cpp")
 file(GLOB_RECURSE WAMR_SOURCES "src/wamr/*.cpp")
 file(GLOB_RECURSE WASM_SOURCES "src/wasm/*.cpp")
+file(GLOB_RECURSE MESSAGE_SOURCES "src/ring_buffer_rpc/*.cpp")
 
 set(SHARED_SOURCES
   ${RPC_SOURCES}
-  src/ring_buffer_rpc/rb_message_queue.cpp
+  ${MESSAGE_SOURCES}
   ${WAMR_SOURCES}
   ${WASM_SOURCES}
 )

@@ -12,7 +12,7 @@
 
 extern "C" {
     int32_t receive_rpcmessage(uint32_t offset, uint32_t length);
-    void    send_rpcresponse(uint32_t offset, uint32_t length);
+    void    send_rpcresponse(uint32_t offset, uint32_t length, uint32_t request_id);
 }
 
 class RpcServer {
@@ -25,7 +25,7 @@ public:
     void RegisterHandler(uint32_t payload_tag, HandlerFn handler);
 
     bool ProcessNextRequest();
-    void sendResponse(const RpcResponse& resp);
+    void sendResponse(const RpcResponse& resp, uint32_t request_id);
 
     // For typed handlers that operate on proto messages
     template<typename Req, typename Resp>

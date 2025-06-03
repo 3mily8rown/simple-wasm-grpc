@@ -106,9 +106,6 @@ int send_varied_messages(int count) {
 }
 
 int main() {
-    send_x_messages(10);
-    // send_add_random(5);
-    // send_process_floats(5);
-    // send_varied_messages(10);
+    send_process_floats(5);
     return 0;
 }

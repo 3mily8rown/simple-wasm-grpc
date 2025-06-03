@@ -8,7 +8,7 @@
 #include <thread>
 
 // #include "rpc/message_queue.h"
-#include "ring_buffer_rpc/rb_message_queue.h"
+#include "ring_buffer_rpc/rpc_messaging.h"
 #include "rpc/socket_communication.h"
 
 static constexpr int MAX_CONNECT_ATTEMPTS = 5;
@@ -64,7 +64,8 @@ void socket_listener(int port, in_addr_t ip) {
                 queue_message(buffer, n);
                 // std::cout << "[Native] Queued message for server\n";
             } else if (port == response_port) {
-                queue_response(buffer, n);
+                // todo fix this
+                deliver_response(0,buffer, n);
                 // std::cout << "[Native] Queued response for client\n";
             } else {
                 std::cerr << "[Native] Unknown port: " << port << "\n";

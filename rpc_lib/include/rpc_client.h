@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 #include "rpc_envelope.pb.h"
-#include "message.pb.h"
 
 extern "C" {
     int32_t send_rpcmessage(uint32_t offset, uint32_t length);

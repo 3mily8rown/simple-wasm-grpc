@@ -30,8 +30,16 @@ bool RpcServer::ProcessNextRequest() {
         return false;
     }
 
+    // Native set 4 bytes as request_id at the start of the buffer
+    uint32_t request_id;
+    std::memcpy(&request_id, buf.data, sizeof(uint32_t));
+
+    // shift the payload to remove request_id if handlers shouldn't see it
+    uint8_t* payload_start = buf.data + sizeof(uint32_t);
+    int32_t payload_len = len - sizeof(uint32_t);
+
     RpcEnvelope env = RpcEnvelope_init_zero;
-    pb_istream_t istream = pb_istream_from_buffer(buf.data, len);
+    pb_istream_t istream = pb_istream_from_buffer(payload_start, payload_len);
     if (!pb_decode(&istream, RpcEnvelope_fields, &env)) {
         std::fprintf(stderr, "[Server] RpcEnvelope decode error: %s\n", PB_GET_ERROR(&istream));
         std::free(buf.data);
@@ -41,7 +49,7 @@ bool RpcServer::ProcessNextRequest() {
     auto it = handlers_.find(env.which_payload);
     bool handled = false;
     if (it != handlers_.end()) {
-        handled = it->second(env.request_id, env);
+        handled = it->second(request_id, env);
     } else {
         std::fprintf(stderr, "[Server] No handler registered for payload tag %d\n", env.which_payload);
     }
@@ -50,7 +58,7 @@ bool RpcServer::ProcessNextRequest() {
     return handled;
 }
 
-void RpcServer::sendResponse(const RpcResponse& resp) {
+void RpcServer::sendResponse(const RpcResponse& resp, uint32_t request_id) {
     uint8_t tmp[512];
     pb_ostream_t ostream = pb_ostream_from_buffer(tmp, sizeof(tmp));
     if (!pb_encode(&ostream, RpcResponse_fields, &resp)) {
@@ -66,7 +74,7 @@ void RpcServer::sendResponse(const RpcResponse& resp) {
     }
 
     std::memcpy(wasm_buf, tmp, len);
-    send_rpcresponse(reinterpret_cast<uint32_t>(wasm_buf), len);
+    send_rpcresponse(reinterpret_cast<uint32_t>(wasm_buf), len, request_id);
     std::free(wasm_buf);
 }
 
@@ -109,7 +117,7 @@ void RpcServer::registerTypedHandler(uint32_t tag, std::function<void(const Req&
             static_assert(sizeof(Resp) == 0, "Unsupported response type in registerTypedHandler");
         }
 
-        sendResponse(out);
+        sendResponse(out, req_id);
         return true;
     });
 }

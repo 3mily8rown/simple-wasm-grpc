@@ -59,8 +59,8 @@ int main() {
 
     // ------------------------------------------------------- load each module
   
-    std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
-    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.aot";
+    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.wasm";
+    std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app.aot";
     auto client_buffer = readFileToBytes(client_wasm_path);
   
     // load module and create execution environment
@@ -93,7 +93,7 @@ int main() {
     // auto start = std::chrono::high_resolution_clock::now();
 
     pthread_t c_th;
-    if (!start_wasm_thread(client_module_inst, client_func, &c_th)) {
+    if (!start_wasm_thread(client_module_inst, client_func, 1, &c_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
 

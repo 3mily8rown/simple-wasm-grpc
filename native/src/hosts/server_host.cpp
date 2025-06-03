@@ -62,8 +62,8 @@ int main() {
 
     // ------------------------------------------------------- load each module
 
-    // std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.aot";
-    std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.wasm";
+    std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.aot";
+    // std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.wasm";
     auto server_buffer = readFileToBytes(server_wasm_path);
   
     // load module and create execution environment
@@ -96,7 +96,7 @@ int main() {
 
     std::cout << "[Server] start server" << std::endl;
     pthread_t s_th;
-    if (!start_wasm_thread(server_module_inst, server_func, &s_th)) {
+    if (!start_wasm_thread(server_module_inst, server_func, 0, &s_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
 

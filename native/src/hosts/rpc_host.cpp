@@ -42,9 +42,17 @@ int main() {
     wasm_module_inst_t client_module_inst = nullptr;
     wasm_exec_env_t client_exec_env = nullptr;
 
+    wasm_module_t client_module2 = nullptr;
+    wasm_module_inst_t client_module_inst2 = nullptr;
+    wasm_exec_env_t client_exec_env2 = nullptr;
+
     wasm_module_t server_module = nullptr;
     wasm_module_inst_t server_module_inst = nullptr;
     wasm_exec_env_t server_exec_env = nullptr;
+
+    wasm_module_t server_module2 = nullptr;
+    wasm_module_inst_t server_module_inst2 = nullptr;
+    wasm_exec_env_t server_exec_env2 = nullptr;
 
     // ------------------------------------------ wamr overall setup
     char error_buf[128];
@@ -85,6 +93,17 @@ int main() {
       return 1;
     }
 
+    // second client
+    // std::string client_wasm_path = Config::get("WASM_OUT") + "/client_app2.aot";
+    std::string client_wasm_path2 = Config::get("WASM_OUT") + "/client_app2.wasm";
+    auto client_buffer2 = readFileToBytes(client_wasm_path2);
+  
+    // load module and create execution environment
+    client_module2 = load_module_minimal(client_buffer2, client_module_inst2, client_exec_env2, stack_size, heap_size, error_buf, sizeof(error_buf));
+    if (!client_module2) {
+      return 1;
+    }
+
     // ----------------
 
     // std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.aot";
@@ -94,6 +113,18 @@ int main() {
     // load module and create execution environment
     server_module = load_module_minimal(server_buffer, server_module_inst, server_exec_env, stack_size, heap_size, error_buf, sizeof(error_buf));
     if (!server_module) {
+      return 1;
+    }
+
+    // ----------------second server
+
+    // std::string server_wasm_path = Config::get("WASM_OUT") + "/server_app.aot";
+    std::string server_wasm_path2 = Config::get("WASM_OUT") + "/server_app.wasm";
+    auto server_buffer2 = readFileToBytes(server_wasm_path2);
+  
+    // load module and create execution environment
+    server_module2 = load_module_minimal(server_buffer2, server_module_inst2, server_exec_env2, stack_size, heap_size, error_buf, sizeof(error_buf));
+    if (!server_module2) {
       return 1;
     }
 
@@ -108,7 +139,20 @@ int main() {
     }
 
     pthread_t c_th;
-    if (!start_wasm_thread(client_module_inst, client_func, &c_th)) {
+    if (!start_wasm_thread(client_module_inst, client_func, 1, &c_th)) {
+      std::fprintf(stderr, "Thread spawn failed\n");
+    }
+
+    // second client
+    // calling client main function
+    auto client_func2 = wasm_runtime_lookup_function(client_module_inst2, "_start");
+    if (!client_func2) {
+      fprintf(stderr, "_start wasm function is not found.\n");
+      return 1;
+    }
+
+    pthread_t c_th2;
+    if (!start_wasm_thread(client_module_inst2, client_func2, 2, &c_th2)) {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
 
@@ -120,15 +164,29 @@ int main() {
     }
 
     pthread_t s_th;
-    if (!start_wasm_thread(server_module_inst, server_func, &s_th)) {
+    if (!start_wasm_thread(server_module_inst, server_func, 0, &s_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
+
+    // // ---------------------------------------------- server
+    // auto server_func2 = wasm_runtime_lookup_function(server_module_inst2, "_start");
+    // if (!server_func2) {
+    //   fprintf(stderr, "_start wasm function is not found.\n");
+    //   return 1;
+    // }
+
+    // pthread_t s_th2;
+    // if (!start_wasm_thread(server_module_inst2, server_func2, 0, &s_th2)) {
+    //   std::fprintf(stderr, "Thread spawn failed\n");
+    // }
 
     // ------------------------------
     // wait for branches
      
     pthread_join(c_th, nullptr);  
+    pthread_join(c_th2, nullptr);  
 
     pthread_join(s_th, nullptr); 
+    // pthread_join(s_th2, nullptr); 
     return 0;
 }

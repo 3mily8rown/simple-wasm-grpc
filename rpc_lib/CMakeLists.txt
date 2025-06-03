@@ -110,8 +110,6 @@ target_include_directories(rpc_lib
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     # $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/generated_nano>
-    # Protoc plugins usually generate files to avoid needing this v
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../wasm/generated_nano>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated_nano>
     $<INSTALL_INTERFACE:include/rpc_lib>
 

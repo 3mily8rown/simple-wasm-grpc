@@ -17,7 +17,7 @@ int32_t receive_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset,
     uint32_t max_len);
 
 void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, 
-    uint32_t length);
+    uint32_t length, uint32_t request_id);
 
 int64_t get_time_us(wasm_exec_env_t exec_env);
 
