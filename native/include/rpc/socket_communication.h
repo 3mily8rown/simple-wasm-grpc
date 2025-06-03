@@ -30,5 +30,5 @@ void send_response_over_socket(const uint8_t* data, uint32_t length, const char*
 
 // Convenience overloads (optional):
 void send_over_socket(const uint8_t* data, uint32_t length); // default to get_client_ip()
-void send_response_over_socket(const uint8_t* data, uint32_t length); // default to get_server_ip()
+void send_response_over_socket(const uint8_t* data, uint32_t length, uint32_t request_id); // default to get_server_ip()
 

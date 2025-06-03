@@ -64,10 +64,23 @@ void socket_listener(int port, in_addr_t ip) {
                 queue_message(buffer, n);
                 // std::cout << "[Native] Queued message for server\n";
             } else if (port == response_port) {
-                // todo fix this
-                deliver_response(0,buffer, n);
-                // std::cout << "[Native] Queued response for client\n";
-            } else {
+                if (n < 4) {
+                    // Not enough data to extract request_id
+                    std::cerr << "Received response too short to contain request ID\n";
+                    return;
+                }
+
+                // Extract request_id from the first 4 bytes (little-endian)
+                uint32_t request_id =
+                    (uint32_t(buffer[0])      )
+                    | (uint32_t(buffer[1]) << 8 )
+                    | (uint32_t(buffer[2]) << 16)
+                    | (uint32_t(buffer[3]) << 24);
+
+                // Advance the buffer pointer and reduce size
+                deliver_response(request_id, buffer + 4, n - 4);
+            }
+            else {
                 std::cerr << "[Native] Unknown port: " << port << "\n";
             }
         }
@@ -168,9 +181,28 @@ void send_over_socket(const uint8_t* data, uint32_t length) {
     send_over_socket(data, length, get_server_ip(), message_port);
 }
 
-void send_response_over_socket(const uint8_t* data, uint32_t length) {
-    send_response_over_socket(data, length, get_client_ip(), response_port);
+// void send_response_over_socket(const uint8_t* data, uint32_t length, uint32_t request_id) {
+//     send_response_over_socket(data, length, get_client_ip(), response_port);
+// }
+
+void send_response_over_socket(const uint8_t* data, uint32_t length, uint32_t request_id) {
+    // Allocate a temporary buffer for [request_id | data]
+    uint32_t total_length = sizeof(uint32_t) + length;
+    std::vector<uint8_t> buffer(total_length);
+
+    // Copy request_id to the front (little-endian)
+    buffer[0] = uint8_t((request_id >>  0) & 0xFF);
+    buffer[1] = uint8_t((request_id >>  8) & 0xFF);
+    buffer[2] = uint8_t((request_id >> 16) & 0xFF);
+    buffer[3] = uint8_t((request_id >> 24) & 0xFF);
+
+    // Copy original message after the request_id
+    std::memcpy(buffer.data() + sizeof(uint32_t), data, length);
+
+    // Call the actual socket send function
+    send_response_over_socket(buffer.data(), total_length, get_client_ip(), response_port);
 }
+
 
 in_addr_t resolve_ip_or_throw(const char* hostname) {
     in_addr addr_parsed{};

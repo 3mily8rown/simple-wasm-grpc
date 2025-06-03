@@ -64,7 +64,7 @@ int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t m
         return 0;
     }
 
-    return dequeue_message_with_timeout(dest, max_length, 3000);
+    return dequeue_message_with_timeout(dest, max_length, 5000);
 }
 
 int32_t send_rpcmessage_unary(wasm_exec_env_t exec_env,
@@ -96,7 +96,7 @@ int32_t send_rpcmessage_unary(wasm_exec_env_t exec_env,
 
     // Wait for response
     std::vector<uint8_t> response;
-    if (!wait_for_response(request_id, response, 3000)) {
+    if (!wait_for_response(request_id, response, 10000)) {
         std::fprintf(stderr, "[Client] Timeout waiting for response\n");
         return 0;
     }
@@ -123,7 +123,7 @@ void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length
     } else {
         // printf("Local client is offline, sending over socket...\n");
         // todo incorporate request_id into socket communication
-        send_response_over_socket(src, length);
+        send_response_over_socket(src, length, request_id);
     }    
 }
 
@@ -142,7 +142,7 @@ int32_t receive_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t 
     uint32_t request_id = get_thread_id();
 
     std::vector<uint8_t> response;
-    if (!wait_for_response(request_id, response, /*timeout_ms=*/3000)) {
+    if (!wait_for_response(request_id, response, /*timeout_ms=*/10000)) {
         std::fprintf(stderr, "[Client] Timed out waiting for response\n");
         return 0;
     }
