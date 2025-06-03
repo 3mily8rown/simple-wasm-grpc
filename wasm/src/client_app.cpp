@@ -14,22 +14,14 @@ extern "C" {
 
 int send_x_messages(int count) {
     RpcClient client;
-    SendMessage msg = SendMessage_init_zero;
-    msg.id = 42;
-    std::strncpy(msg.name, "hello from client", sizeof(msg.name) - 1);
 
     int64_t initial_time = get_time_us();
     for (int i = 0; i < count; i++) {
         int64_t t0 = get_time_us();
 
-        if (!client.Send(i, RpcEnvelope_msg_tag, &msg)) {
-            std::fprintf(stderr, "Failed to Send\n");
-            return 1;
-        }
-
-        SendMessageResponse ack = SendMessageResponse_init_zero;
-        if (!client.Receive<SendMessageResponse>(RpcResponse_msg_tag, &ack)) {
-            std::fprintf(stderr, "Failed to get response\n");
+        std::string ack = client.sendMessage(i, "hello from client");
+        if (ack.empty()) {
+            std::fprintf(stderr, "Failed to send message\n");
             return 1;
         }
 
@@ -43,28 +35,24 @@ int send_x_messages(int count) {
     return 0;
 }
 
+
 int send_varied_messages(int count) {
     RpcClient client;
-    SendMessage msg = SendMessage_init_zero;
-    msg.id = 42;
 
     for (int i = 8; i < 2048; i *= 2) {
-        int fill_len = std::min(i, static_cast<int>(sizeof(msg.name)) - 1);
-        std::memset(msg.name, 'A', fill_len);
-        msg.name[fill_len] = '\0';
+        char name_buf[sizeof(SendMessage::name)] = {};
+        int fill_len = std::min(i, static_cast<int>(sizeof(name_buf)) - 1);
+        std::memset(name_buf, 'A', fill_len);
+        name_buf[fill_len] = '\0';
 
         int64_t initial_time = get_time_us();
+
         for (int j = 0; j < count; j++) {
             int64_t t0 = get_time_us();
 
-            if (!client.Send(j, RpcEnvelope_msg_tag, &msg)) {
-                std::fprintf(stderr, "Failed to Send\n");
-                return 1;
-            }
-
-            SendMessageResponse ack = SendMessageResponse_init_zero;
-            if (!client.Receive<SendMessageResponse>(RpcResponse_msg_tag, &ack)) {
-                std::fprintf(stderr, "Failed to get response\n");
+            std::string ack = client.sendMessage(j, name_buf);
+            if (ack.empty()) {
+                std::fprintf(stderr, "Failed to send message\n");
                 return 1;
             }
 
@@ -79,6 +67,7 @@ int send_varied_messages(int count) {
 
     return 0;
 }
+
 
 int main() {
     return send_x_messages(1);
