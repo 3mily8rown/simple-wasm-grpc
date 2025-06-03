@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <functional>
 #include <unordered_map>
+#include <string>
+#include <vector>
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "rpc_envelope.pb.h"
@@ -15,7 +17,6 @@ extern "C" {
 
 class RpcServer {
 public:
-    // New: Dispatch handlers based on which_payload tag
     using HandlerFn = std::function<bool(uint32_t /*request_id*/, const RpcEnvelope&)>;
 
     RpcServer() = default;
@@ -23,17 +24,27 @@ public:
 
     void RegisterHandler(uint32_t payload_tag, HandlerFn handler);
 
-    // Receives a request and dispatches based on RpcEnvelope.which_payload
     bool ProcessNextRequest();
-
     void sendResponse(const RpcResponse& resp);
+
+    // For typed handlers that operate on proto messages
+    template<typename Req, typename Resp>
+    void registerTypedHandler(uint32_t tag, std::function<void(const Req&, Resp*)> handler);
+
+    // Application-level native handlers (business logic only)
+    void registerFunction(uint32_t tag, std::function<std::string(int32_t, std::string)> fn);  // SendMessage
+    void registerFunction(uint32_t tag, std::function<int32_t(int32_t)> fn);                   // AddRandom
+    void registerFunction(uint32_t tag, std::function<float(std::vector<float>)> fn);          // ProcessFloats
 
 private:
     std::unordered_map<uint32_t, HandlerFn> handlers_;
 
-    // Allocates a receive buffer in WASM memory
     struct Buffer { uint8_t* data; uint32_t size; };
     Buffer alloc_buffer(uint32_t max_size);
 };
+
+// Payload extraction helpers (template specializations)
+template<typename Req>
+const Req& getPayload(uint32_t tag, const RpcEnvelope& env);
 
 #endif // RPC_SERVER_H

@@ -1,10 +1,10 @@
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
+#include <vector>
 #include "rpc_client.h"
 #include "message.pb.h"
 #include "rpc_envelope.pb.h"
-
 
 extern "C" {
     int64_t get_time_us();
@@ -26,15 +26,56 @@ int send_x_messages(int count) {
         }
 
         int64_t t1 = get_time_us();
-        uint32_t rtt = static_cast<uint32_t>(t1 - t0);
-        send_rtt(rtt);
+        send_rtt(static_cast<uint32_t>(t1 - t0));
     }
 
-    int64_t final_time = get_time_us();
-    send_total(static_cast<uint32_t>(final_time - initial_time), count);
+    send_total(static_cast<uint32_t>(get_time_us() - initial_time), count);
     return 0;
 }
 
+int send_add_random(int count) {
+    RpcClient client;
+
+    int64_t initial_time = get_time_us();
+    for (int i = 0; i < count; i++) {
+        int64_t t0 = get_time_us();
+
+        int32_t result = client.addRandom(i);
+        if (result < 0) {
+            std::fprintf(stderr, "addRandom failed\n");
+            return 1;
+        }
+
+        int64_t t1 = get_time_us();
+        send_rtt(static_cast<uint32_t>(t1 - t0));
+    }
+
+    send_total(static_cast<uint32_t>(get_time_us() - initial_time), count);
+    return 0;
+}
+
+int send_process_floats(int count) {
+    RpcClient client;
+
+    int64_t initial_time = get_time_us();
+    for (int i = 0; i < count; i++) {
+        std::vector<float> nums = {1.0f * i, 2.0f * i, 3.0f * i};
+
+        int64_t t0 = get_time_us();
+
+        float result = client.processFloats(nums);
+        if (result < 0.0f) {
+            std::fprintf(stderr, "processFloats failed\n");
+            return 1;
+        }
+
+        int64_t t1 = get_time_us();
+        send_rtt(static_cast<uint32_t>(t1 - t0));
+    }
+
+    send_total(static_cast<uint32_t>(get_time_us() - initial_time), count);
+    return 0;
+}
 
 int send_varied_messages(int count) {
     RpcClient client;
@@ -46,7 +87,6 @@ int send_varied_messages(int count) {
         name_buf[fill_len] = '\0';
 
         int64_t initial_time = get_time_us();
-
         for (int j = 0; j < count; j++) {
             int64_t t0 = get_time_us();
 
@@ -57,19 +97,19 @@ int send_varied_messages(int count) {
             }
 
             int64_t t1 = get_time_us();
-            uint32_t rtt = static_cast<uint32_t>(t1 - t0);
-            send_rtt(rtt);
+            send_rtt(static_cast<uint32_t>(t1 - t0));
         }
 
-        int64_t final_time = get_time_us();
-        send_total(static_cast<uint32_t>(final_time - initial_time), count);
+        send_total(static_cast<uint32_t>(get_time_us() - initial_time), count);
     }
 
     return 0;
 }
 
-
 int main() {
-    return send_x_messages(1);
-    // return send_varied_messages(10);
+    send_x_messages(10);
+    send_add_random(5);
+    send_process_floats(5);
+    send_varied_messages(10);
+    return 0;
 }
