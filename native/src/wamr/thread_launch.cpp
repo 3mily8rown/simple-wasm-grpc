@@ -56,7 +56,7 @@ static void *wasm_thread_entry(void *raw_arg) {
 }
 
 uint32_t get_thread_id() {
-    return tls_thread_id;
+    return tls_thread_id ? tls_thread_id : 0; // Return 0 if not set
 }
 
 // Now accepts thread_id so caller can assign a unique client ID per thread

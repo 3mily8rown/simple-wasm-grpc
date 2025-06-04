@@ -11,29 +11,14 @@
 #include <vector>
 #include <unordered_map>
 
-struct ResponseSlot {
-    std::vector<uint8_t> response;
-    std::mutex mtx;
-    std::condition_variable cv;
-    bool ready = false;
-
-    // Waits for data or times out
-    bool wait_for_data(std::chrono::milliseconds timeout) {
-        std::unique_lock<std::mutex> lock(mtx);
-        return cv.wait_for(lock, timeout, [&]() { return ready; });
-    }
-};
-
 // ------------------------------------------------------------------------------------------------------------
 // global ring buffer (requests) and map of response slots
 // ------------------------------------------------------------------------------------------------------------
 static constexpr size_t REQUEST_BUFFER_CAPACITY  = 1 * 1024 * 1024; // 1 MiB
 static RingBuffer g_request_rb (REQUEST_BUFFER_CAPACITY);
 
-
-static std::unordered_map<uint32_t, ResponseSlot*> g_response_slots;
-static std::mutex g_response_slots_mtx;
-
+std::unordered_map<uint32_t, ResponseSlot*> g_response_slots;
+std::mutex g_response_slots_mtx;
 
 // ------------------------------------------------------------------------------------------------------------
 // Public API
@@ -56,7 +41,7 @@ void queue_message(const uint8_t* data, uint32_t length) {
 
 // Dequeue exactly one request. BLOCKS until a complete message is available.
 // Returns the actual payload length (caller can compare against max_length
-// to see if truncation occurred, but in normal operation payload ≤ max_length).
+// to see if truncation occurred, but in normal operation payload <= max_length).
 uint32_t dequeue_message(uint8_t* dest, uint32_t max_length) {
     return g_request_rb.dequeue(dest, max_length);
 }
@@ -66,9 +51,12 @@ int32_t dequeue_message_with_timeout(uint8_t* dest, uint32_t max_length, int tim
 }
 
 void begin_wait_for_response(uint32_t request_id) {
-    auto* slot = new ResponseSlot();
     std::lock_guard<std::mutex> lock(g_response_slots_mtx);
-    g_response_slots[request_id] = slot;
+    if (g_response_slots.count(request_id)) {
+        std::cerr << "[begin_wait_for_response] Duplicate request_id: " << request_id << "\n";
+        return; // or overwrite only if you're sure that's safe
+    }
+    g_response_slots[request_id] = new ResponseSlot();
 }
 
 
@@ -78,42 +66,57 @@ bool wait_for_response(uint32_t request_id, std::vector<uint8_t>& out, int timeo
     {
         std::lock_guard<std::mutex> lock(g_response_slots_mtx);
         auto it = g_response_slots.find(request_id);
-        if (it == g_response_slots.end()) return false;
+        if (it == g_response_slots.end()) {
+            std::cerr << "[wait_for_response] Unknown request_id " << request_id << "\n";
+            return false;
+        }
         slot = it->second;
     }
 
-    bool ok = slot->wait_for_data(std::chrono::milliseconds(timeout_ms));
+    std::cerr << "[wait_for_response] Waiting on slot " << slot << " for request_id " << request_id << "\n";
 
-    {
-        std::lock_guard<std::mutex> lock(g_response_slots_mtx);
-        g_response_slots.erase(request_id);
+    if (!slot->wait_for_data(std::chrono::milliseconds(timeout_ms))) {
+        std::cerr << "[wait_for_response] Timeout on slot " << slot << "\n";
+        return false;
     }
+    std::cout << "[wait_for_response] Data ready in slot " << slot << "\n";
 
-    if (!ok) return false;
     out = std::move(slot->response);
-    delete slot; // clean up
     return true;
 }
 
 
 void deliver_response(uint32_t request_id, const uint8_t* data, uint32_t len) {
-    std::unique_lock<std::mutex> lock(g_response_slots_mtx);
-    auto it = g_response_slots.find(request_id);
-    if (it == g_response_slots.end()) {
-        std::cerr << "[RingBuffer] deliver_response: unknown request_id " << request_id << "\n";
-        return;
+    ResponseSlot* slot = nullptr;
+
+    {
+        std::lock_guard<std::mutex> lock(g_response_slots_mtx);
+        auto it = g_response_slots.find(request_id);
+        if (it == g_response_slots.end()) {
+            std::cerr << "[deliver_response] Unknown request_id " << request_id << "\n";
+            return;
+        }
+
+        slot = it->second;
+        std::cout << "[deliver_response] Delivering to slot " << slot << " for request_id " << request_id << "\n";
     }
-
-
-    ResponseSlot* slot = it->second;
-    g_response_slots.erase(it); // one-shot
-    lock.unlock();
 
     {
         std::lock_guard<std::mutex> slot_lock(slot->mtx);
         slot->response.assign(data, data + len);
-        slot->ready = true;
+        slot->ready.store(true, std::memory_order_release);
     }
-    slot->cv.notify_one();
+
+    slot->cv.notify_one();  // notify after unlocking global and slot mutex
 }
 
+
+void remove_response_slot(uint32_t request_id) {
+    std::lock_guard<std::mutex> lock(g_response_slots_mtx);
+    auto it = g_response_slots.find(request_id);
+    if (it != g_response_slots.end()) {
+        delete it->second;
+        g_response_slots.erase(it);
+        std::cerr << "[remove_response_slot] Removed slot for request_id " << request_id << "\n";
+    }
+}

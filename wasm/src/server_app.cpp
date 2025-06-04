@@ -6,6 +6,7 @@
 // Simple business logic functions
 
 std::string greet(int32_t id, std::string name) {
+    std::printf("[Server] Received message from ID %d: %s\n", id, name.c_str());
     return "Hello back, " + name + "!";
 }
 

@@ -4,6 +4,7 @@
 #include <vector>
 #include "rpc_client.h"
 #include "rpc_envelope.pb.h"
+#include <iostream>
 
 extern "C" {
     int64_t get_time_us();
@@ -105,8 +106,38 @@ int send_varied_messages(int count) {
     return 0;
 }
 
+int send_async_messages(int count) {
+    RpcClient client;
+
+    int64_t initial_time = get_time_us();
+    for (int i = 0; i < count; i++) {
+        int64_t t0 = get_time_us();
+
+        uint32_t id = client.sendMessageAsync(i, "hello from client");
+        if (id == 0) {
+            std::fprintf(stderr, "Failed to send message\n");
+            return 1;
+        }
+        std::string result;
+        
+        if (client.pollSendMessageResponse(id, result)) {
+            std::fprintf(stdout, "Received async response for message %d\n", id);
+            break;
+        }
+            
+        
+        fflush(stdout);
+        int64_t t1 = get_time_us();
+        send_rtt(static_cast<uint32_t>(t1 - t0));
+    }
+
+    send_total(static_cast<uint32_t>(get_time_us() - initial_time), count);
+    return 0;
+}
+
 int main() {
-    send_x_messages(10);
+    // send_x_messages(10);
+    send_async_messages(1);
     // send_add_random(5);
     // send_process_floats(5);
     // send_varied_messages(10);

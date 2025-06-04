@@ -59,6 +59,7 @@ bool RpcServer::ProcessNextRequest() {
 }
 
 void RpcServer::sendResponse(const RpcResponse& resp, uint32_t request_id) {
+    std::printf("[Server] Sending response for request_id %u\n", request_id);
     uint8_t tmp[512];
     pb_ostream_t ostream = pb_ostream_from_buffer(tmp, sizeof(tmp));
     if (!pb_encode(&ostream, RpcResponse_fields, &resp)) {
@@ -97,6 +98,7 @@ const ProcessFloats& getPayload<ProcessFloats>(uint32_t, const RpcEnvelope& env)
 
 template<typename Req, typename Resp>
 void RpcServer::registerTypedHandler(uint32_t tag, std::function<void(const Req&, Resp*)> handler) {
+    std::printf("[Server] Registering handler for tag %u\n", tag);
     RegisterHandler(tag, [=](uint32_t req_id, const RpcEnvelope& env) -> bool {
         const Req& req = getPayload<Req>(tag, env);
         Resp resp{};
@@ -105,13 +107,15 @@ void RpcServer::registerTypedHandler(uint32_t tag, std::function<void(const Req&
         RpcResponse out = RpcResponse_init_zero;
         out.request_id = req_id;
         out.status = true;
-        out.which_payload = tag;
 
         if constexpr (std::is_same_v<Resp, SendMessageResponse>) {
+            out.which_payload = RpcResponse_msg_tag;
             out.payload.msg = resp;
         } else if constexpr (std::is_same_v<Resp, AddRandomResponse>) {
+            out.which_payload = RpcResponse_rand_tag;
             out.payload.rand = resp;
         } else if constexpr (std::is_same_v<Resp, ProcessFloatsResponse>) {
+            out.which_payload = RpcResponse_flt_tag;
             out.payload.flt = resp;
         } else {
             static_assert(sizeof(Resp) == 0, "Unsupported response type in registerTypedHandler");
