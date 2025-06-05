@@ -93,16 +93,16 @@ int main() {
       return 1;
     }
 
-    // second client
-    std::string client_wasm_path2 = Config::get("WASM_OUT") + "/client_app2.aot";
-    // std::string client_wasm_path2 = Config::get("WASM_OUT") + "/client_app2.wasm";
-    auto client_buffer2 = readFileToBytes(client_wasm_path2);
+    // // second client
+    // std::string client_wasm_path2 = Config::get("WASM_OUT") + "/client_app2.aot";
+    // // std::string client_wasm_path2 = Config::get("WASM_OUT") + "/client_app2.wasm";
+    // auto client_buffer2 = readFileToBytes(client_wasm_path2);
   
-    // load module and create execution environment
-    client_module2 = load_module_minimal(client_buffer2, client_module_inst2, client_exec_env2, stack_size, heap_size, error_buf, sizeof(error_buf));
-    if (!client_module2) {
-      return 1;
-    }
+    // // load module and create execution environment
+    // client_module2 = load_module_minimal(client_buffer2, client_module_inst2, client_exec_env2, stack_size, heap_size, error_buf, sizeof(error_buf));
+    // if (!client_module2) {
+    //   return 1;
+    // }
 
     // ----------------
 
@@ -116,17 +116,17 @@ int main() {
       return 1;
     }
 
-    // ----------------second server
+    // // ----------------second server
 
-    std::string server_wasm_path2 = Config::get("WASM_OUT") + "/server_app.aot";
-    // std::string server_wasm_path2 = Config::get("WASM_OUT") + "/server_app.wasm";
-    auto server_buffer2 = readFileToBytes(server_wasm_path2);
+    // std::string server_wasm_path2 = Config::get("WASM_OUT") + "/server_app.aot";
+    // // std::string server_wasm_path2 = Config::get("WASM_OUT") + "/server_app.wasm";
+    // auto server_buffer2 = readFileToBytes(server_wasm_path2);
   
-    // load module and create execution environment
-    server_module2 = load_module_minimal(server_buffer2, server_module_inst2, server_exec_env2, stack_size, heap_size, error_buf, sizeof(error_buf));
-    if (!server_module2) {
-      return 1;
-    }
+    // // load module and create execution environment
+    // server_module2 = load_module_minimal(server_buffer2, server_module_inst2, server_exec_env2, stack_size, heap_size, error_buf, sizeof(error_buf));
+    // if (!server_module2) {
+    //   return 1;
+    // }
 
     // ---------------------------------------------------------------- client
 

@@ -12,6 +12,7 @@ extern "C" {
     void send_total(uint32_t time_us, uint32_t count);
 }
 
+// main function implemenations for evaluation purposes
 int send_x_messages(int count) {
     RpcClient client;
 
@@ -171,9 +172,9 @@ int send_batch_messages(int count) {
 
 
 int main() {
-    // send_x_messages(10);
+    send_x_messages(10000);
     // send_async_messages(1);
-    send_batch_messages(3);
+    // send_batch_messages(3);
     // send_add_random(5);
     // send_process_floats(5);
     // send_varied_messages(10);

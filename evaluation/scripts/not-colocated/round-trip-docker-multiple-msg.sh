@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_file="metrics/round_trip_log_docker.txt"
+output_file="data/localVsRemote/round_trip_log_docker.csv"
 echo "Run,Timestamp,Metric" > "$output_file"
 
 # Single run
@@ -26,7 +26,6 @@ echo "Single run complete. Metrics logged to $output_file"
 # --------------------------------------------
 awk -F, '
     NR>1 {
-        # $3 is like: "client_container  | RTT = 5245μs"
         sub(/.*RTT = /, "", $3)
         sub(/μs.*/, "", $3)
         sum += $3

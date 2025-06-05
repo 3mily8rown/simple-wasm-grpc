@@ -25,7 +25,6 @@ void register_all_env_symbols() {
 
 int main() {
     std::cerr << "[Server] starting up\n";          // unbuffered
-    std::cout.setf(std::ios::unitbuf);  // enable unbuffered output for std::cout
 
     // setting up wasm module
     wasm_runtime_set_log_level(WASM_LOG_LEVEL_DEBUG);

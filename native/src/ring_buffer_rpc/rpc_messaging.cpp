@@ -73,13 +73,10 @@ bool wait_for_response(uint32_t request_id, std::vector<uint8_t>& out, int timeo
         slot = it->second;
     }
 
-    std::cerr << "[wait_for_response] Waiting on slot " << slot << " for request_id " << request_id << "\n";
-
     if (!slot->wait_for_data(std::chrono::milliseconds(timeout_ms))) {
         std::cerr << "[wait_for_response] Timeout on slot " << slot << "\n";
         return false;
     }
-    std::cout << "[wait_for_response] Data ready in slot " << slot << "\n";
 
     out = std::move(slot->response);
     return true;
@@ -98,7 +95,6 @@ void deliver_response(uint32_t request_id, const uint8_t* data, uint32_t len) {
         }
 
         slot = it->second;
-        std::cout << "[deliver_response] Delivering to slot " << slot << " for request_id " << request_id << "\n";
     }
 
     {

@@ -10,8 +10,8 @@ extern "C" {
 // Simple business logic functions
 
 std::string greet(int32_t id, std::string name) {
-    std::printf("[Server] Received message from ID %d: %s\n", id, name.c_str());
-    fflush(stdout);
+    // std::printf("[Server] Received message from ID %d: %s\n", id, name.c_str());
+    // fflush(stdout);
     return "Hello back, " + name + "!";
 }
 

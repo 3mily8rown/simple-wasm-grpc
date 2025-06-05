@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_file="metrics/round_trip_log_colocated_docker_multiple_msg.txt"
+output_file="data/localVsRemote/round_trip_log_colocated_multiple_msg.csv"
 echo "Run,Timestamp,Metric" > "$output_file"
 
 # Single run

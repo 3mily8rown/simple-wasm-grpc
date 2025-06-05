@@ -41,7 +41,6 @@ void dump_response_slots(const char* context) {
 }
 
 void rpc_server_ready(wasm_exec_env_t env) {
-    std::cerr << "[Native] rpc_server_ready called (likely from WASM)\n";
     g_server_ready.store(true, std::memory_order_release);
 }
 
@@ -60,7 +59,6 @@ int32_t send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t leng
 
     uint32_t request_id = get_thread_id();
     begin_wait_for_response(request_id);
-    dump_response_slots("[send_rpcmessage] Before sending");
 
     return send_rpcmessage_internal(src, length, request_id);
 }
@@ -72,7 +70,6 @@ int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t m
         return 0;         // or just return;  for void function
     }
 
-    std::cerr << "[WASM-NATIVE] receive_rpcmessage called (likely from WASM) which dequeues\n";
     extern std::atomic<bool> g_local_consumer_online;
     g_local_consumer_online.store(true, std::memory_order_release);
 
@@ -94,13 +91,13 @@ void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length
     }
 
 
-    void* callstack[10];
-    int frames = backtrace(callstack, 10);
-    char** strs = backtrace_symbols(callstack, frames);
-    std::cerr << "send_rpcresponse backtrace:\n";
-    for (int i = 0; i < frames; ++i)
-        std::cerr << strs[i] << "\n";
-    free(strs);
+    // void* callstack[10];
+    // int frames = backtrace(callstack, 10);
+    // char** strs = backtrace_symbols(callstack, frames);
+    // std::cerr << "send_rpcresponse backtrace:\n";
+    // for (int i = 0; i < frames; ++i)
+    //     std::cerr << strs[i] << "\n";
+    // free(strs);
     wasm_module_inst_t inst = wasm_runtime_get_module_inst(exec_env);
     uint8_t* src = static_cast<uint8_t*>(wasm_runtime_addr_app_to_native(inst, offset));
 
@@ -165,7 +162,6 @@ int32_t send_rpcmessage_with_id(wasm_exec_env_t exec_env, uint32_t offset,
 
         uint32_t full_id = make_full_id(local_id, get_thread_id());
         begin_wait_for_response(full_id);
-        dump_response_slots("[send_rpcmessage_with_id] Before sending");
 
         return send_rpcmessage_internal(src, length, full_id);
 }
