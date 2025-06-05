@@ -145,16 +145,16 @@ int main() {
 
     // second client
     // calling client main function
-    auto client_func2 = wasm_runtime_lookup_function(client_module_inst2, "_start");
-    if (!client_func2) {
-      fprintf(stderr, "_start wasm function is not found.\n");
-      return 1;
-    }
+    // auto client_func2 = wasm_runtime_lookup_function(client_module_inst2, "_start");
+    // if (!client_func2) {
+    //   fprintf(stderr, "_start wasm function is not found.\n");
+    //   return 1;
+    // }
 
-    pthread_t c_th2;
-    if (!start_wasm_thread(client_module_inst2, client_func2, 2, &c_th2)) {
-      std::fprintf(stderr, "Thread spawn failed\n");
-    }
+    // pthread_t c_th2;
+    // if (!start_wasm_thread(client_module_inst2, client_func2, 2, &c_th2)) {
+    //   std::fprintf(stderr, "Thread spawn failed\n");
+    // }
 
     // ---------------------------------------------- server
     auto server_func = wasm_runtime_lookup_function(server_module_inst, "_start");
@@ -164,7 +164,7 @@ int main() {
     }
 
     pthread_t s_th;
-    if (!start_wasm_thread(server_module_inst, server_func, 0, &s_th)) {
+    if (!start_wasm_thread(server_module_inst, server_func, 2, &s_th)) {
       std::fprintf(stderr, "Thread spawn failed\n");
     }
 
@@ -184,7 +184,7 @@ int main() {
     // wait for branches
      
     pthread_join(c_th, nullptr);  
-    pthread_join(c_th2, nullptr);  
+    // pthread_join(c_th2, nullptr);  
 
     pthread_join(s_th, nullptr); 
     // pthread_join(s_th2, nullptr); 

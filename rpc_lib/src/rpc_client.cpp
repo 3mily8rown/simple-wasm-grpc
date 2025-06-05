@@ -86,12 +86,42 @@ bool RpcClient::pollSendMessageResponse(uint32_t request_id, std::string& result
     return true;
 }
 
+// Batch methods
+uint32_t RpcClient::sendMessageBatch(const std::vector<std::string>& messages) {
+    BatchSendMessage batch = BatchSendMessage_init_zero;
+
+    size_t count = std::min(messages.size(), static_cast<size_t>(PB_ARRAY_SIZE(&batch, messages)));
+    for (size_t i = 0; i < count; ++i) {
+        batch.messages[i].id = static_cast<int32_t>(i);  // optional
+        std::strncpy(batch.messages[i].name, messages[i].c_str(), sizeof(batch.messages[i].name) - 1);
+    }
+    batch.messages_count = count;
+
+    uint32_t req_id = next_request_id_++;
+    if (!send(req_id, RpcEnvelope_batch_msg_tag, &batch, true)) return 0;
+
+    pending_[req_id] = {RpcResponse_batch_msg_tag, req_id};
+    return req_id;
+}
+
+bool RpcClient::waitForBatchResponse(uint32_t id, std::unordered_map<uint32_t, std::string>& results) {
+    BatchResponse resp = BatchResponse_init_zero;
+    if (!pollResponse<BatchResponse>(RpcResponse_batch_msg_tag, id, &resp)) {
+        std::fprintf(stderr, "[waitForBatchResponse] Failed to receive batch response\n");
+        return false;
+    }
+
+    for (size_t i = 0; i < resp.responses_count; ++i) {
+        results[resp.responses[i].id] = std::string(resp.responses[i].info);
+    }
+    return true;
+}
+
 // ----------------------------
 // Internal helpers
 // ----------------------------
 
 bool RpcClient::send(uint32_t request_id, uint32_t payload_tag, const void* message, bool is_async) {
-    std::cout << "[RpcClient] Sending request with ID: " << request_id << ", payload_tag: " << payload_tag << "\n";
     RpcEnvelope env = RpcEnvelope_init_zero;
     env.request_id = request_id;
     env.which_payload = payload_tag;
@@ -105,6 +135,9 @@ bool RpcClient::send(uint32_t request_id, uint32_t payload_tag, const void* mess
             break;
         case RpcEnvelope_flt_tag:
             env.payload.flt = *reinterpret_cast<const ProcessFloats*>(message);
+            break;
+        case RpcEnvelope_batch_msg_tag:
+            env.payload.batch_msg = *reinterpret_cast<const BatchSendMessage*>(message);
             break;
         default:
             std::fprintf(stderr, "Unknown payload_tag: %u\n", payload_tag);
@@ -132,7 +165,6 @@ bool RpcClient::send(uint32_t request_id, uint32_t payload_tag, const void* mess
     int32_t rc = is_async
         ? send_rpcmessage_with_id(reinterpret_cast<uint32_t>(wasm_buf), len + 4, request_id)
         : send_rpcmessage(reinterpret_cast<uint32_t>(wasm_buf), len + 4);
-    // int32_t rc = send_rpcmessage(reinterpret_cast<uint32_t>(wasm_buf), len + 4);
     std::free(wasm_buf);
 
     return rc >= 0;
@@ -148,11 +180,13 @@ bool RpcClient::decodeResponse(uint8_t* buf, size_t len, uint32_t expected_tag, 
         return false;
     }
 
-    if (expected_request_id != UINT32_MAX && resp.request_id != expected_request_id) {
-        return false;
-    }
+    // if (expected_request_id != UINT32_MAX && resp.request_id != expected_request_id) {
+    //     std::fprintf(stderr, "Unexpected request ID: %u, expected: %u\n", resp.request_id, expected_request_id);
+    //     return false;
+    // }
 
     if (resp.which_payload != expected_tag) {
+        std::fprintf(stderr, "Unexpected payload tag: %u, expected: %u\n", resp.which_payload, expected_tag);
         return false;
     }
 
@@ -162,6 +196,8 @@ bool RpcClient::decodeResponse(uint8_t* buf, size_t len, uint32_t expected_tag, 
         *out_msg = resp.payload.rand;
     } else if constexpr (std::is_same_v<T, ProcessFloatsResponse>) {
         *out_msg = resp.payload.flt;
+    } else if constexpr (std::is_same_v<T, BatchResponse>) {
+        *out_msg = resp.payload.batch_msg;
     } else {
         static_assert(sizeof(T) == 0, "Unsupported message type");
     }
@@ -184,18 +220,23 @@ bool RpcClient::receive(uint32_t expected_tag, T* out_msg) {
 
 template<typename T>
 bool RpcClient::pollResponse(uint32_t expected_tag, uint32_t request_id, T* out_msg) {
-    std::cout << "[RpcClient] Polling response for request_id: " << request_id << "\n";
     auto it = pending_.find(request_id);
     if (it == pending_.end() || it->second.tag != expected_tag) { 
         std::fprintf(stderr, "No pending request with ID %u and tag %u\n", request_id, expected_tag);
-        return false
+        return false;
     }
 
     uint8_t* buf = static_cast<uint8_t*>(std::malloc(512));
-    if (!buf) return false;
+    if (!buf) {
+        std::fprintf(stderr, "malloc failed\n");
+        return false;
+    }
 
     int32_t len = receive_rpcresponse_with_id(reinterpret_cast<uint32_t>(buf), 512, request_id);
     bool success = (len > 0) && decodeResponse<T>(buf, len, expected_tag, request_id, out_msg);
+    if (!success) {
+        std::fprintf(stderr, "Failed to decode response for request_id %u\n", request_id);
+    }
 
     std::free(buf);
     return success;
@@ -205,3 +246,4 @@ bool RpcClient::pollResponse(uint32_t expected_tag, uint32_t request_id, T* out_
 template bool RpcClient::receive<SendMessageResponse>(uint32_t, SendMessageResponse*);
 template bool RpcClient::receive<AddRandomResponse>(uint32_t, AddRandomResponse*);
 template bool RpcClient::receive<ProcessFloatsResponse>(uint32_t, ProcessFloatsResponse*);
+template bool RpcClient::receive<BatchResponse>(uint32_t, BatchResponse*);

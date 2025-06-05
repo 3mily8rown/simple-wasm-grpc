@@ -19,7 +19,7 @@ struct ResponseSlot {
     bool wait_for_data(std::chrono::milliseconds timeout) {
         std::unique_lock<std::mutex> lock(mtx);
         return cv.wait_for(lock, timeout, [&]() {
-            std::cout << "[ResponseSlot] Waiting for data... and ready: " << ready.load(std::memory_order_acquire) << "\n";
+            // std::cout << "[ResponseSlot] Waiting for data... and ready: " << ready.load(std::memory_order_acquire) << "\n";
             return ready.load(std::memory_order_acquire);
         });
     }

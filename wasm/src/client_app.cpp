@@ -121,7 +121,6 @@ int send_async_messages(int count) {
         std::string result;
         
         if (client.pollSendMessageResponse(id, result)) {
-            std::fprintf(stdout, "Received async response for message %d\n", id);
             break;
         }
             
@@ -135,9 +134,46 @@ int send_async_messages(int count) {
     return 0;
 }
 
+int send_batch_messages(int count) {
+    RpcClient client;
+
+    std::vector<std::string> messages;
+    for (int i = 0; i < count; i++) {
+        messages.push_back("Batch message " + std::to_string(i));
+    }
+
+    std::string ack = client.sendMessage(0, "Batch message start");
+    std::fprintf(stdout, "Batch start ack: %s\n", ack.c_str());
+    fflush(stdout);
+
+    int64_t initial_time = get_time_us();
+
+    uint32_t batch_id = client.sendMessageBatch(messages);
+    if (batch_id == 0) {
+        std::fprintf(stderr, "Failed to send batch message\n");
+        return 1;
+    }
+
+    std::unordered_map<uint32_t, std::string> results;
+    if (!client.waitForBatchResponse(batch_id, results)) {
+        std::fprintf(stderr, "Failed to receive batch response\n");
+        return 1;
+    }
+
+    for (const auto& [id, msg] : results) {
+        std::fprintf(stdout, "Batch response for ID %u: %s\n", id, msg.c_str());
+    }
+
+    send_total(static_cast<uint32_t>(get_time_us() - initial_time), count);
+    return 0;
+}
+
+
+
 int main() {
     // send_x_messages(10);
-    send_async_messages(1);
+    // send_async_messages(1);
+    send_batch_messages(3);
     // send_add_random(5);
     // send_process_floats(5);
     // send_varied_messages(10);

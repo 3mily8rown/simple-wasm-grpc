@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstring>
 #include <pthread.h>
+#include <iostream>
 
 #include "wasm/call_wasm.h"
 #include "wamr/thread_launch.h"
@@ -39,6 +40,7 @@ static void *wasm_thread_entry(void *raw_arg) {
     // Here you can store or use arg->thread_id as needed,
     // for example set thread-local variable to identify this thread's client ID
     tls_thread_id = arg->thread_id;
+    std::cout << "[WASM Thread] Started with ID: " << tls_thread_id << "\n";
 
     // Call WASM function
     if (!call_no_args(exec_env, arg->module_inst, arg->func)) {

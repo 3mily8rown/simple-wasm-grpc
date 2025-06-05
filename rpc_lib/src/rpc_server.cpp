@@ -5,6 +5,9 @@
 #include <string>
 #include <vector>
 
+#include <atomic>
+std::atomic_bool g_server_ready{false};   // definition (not just declaration)
+
 // ---------------- Core Infrastructure ----------------
 
 void RpcServer::RegisterHandler(uint32_t tag, HandlerFn handler) {
@@ -17,6 +20,8 @@ RpcServer::Buffer RpcServer::alloc_buffer(uint32_t max_size) {
 }
 
 bool RpcServer::ProcessNextRequest() {
+    std::printf("[Server wasm] Waiting for next request...\n");
+    fflush(stdout);
     Buffer buf = alloc_buffer(512);
     if (!buf.data) {
         std::fprintf(stderr, "[Server] malloc failed\n");
@@ -59,7 +64,9 @@ bool RpcServer::ProcessNextRequest() {
 }
 
 void RpcServer::sendResponse(const RpcResponse& resp, uint32_t request_id) {
-    std::printf("[Server] Sending response for request_id %u\n", request_id);
+    std::printf("[DEBUG] sendResponse called for req_id: %u, payload tag: %d\n", request_id, resp.which_payload);
+
+    // std::printf("[Server] Sending response for request_id %u\n", request_id);
     uint8_t tmp[512];
     pb_ostream_t ostream = pb_ostream_from_buffer(tmp, sizeof(tmp));
     if (!pb_encode(&ostream, RpcResponse_fields, &resp)) {
@@ -92,6 +99,10 @@ const AddRandom& getPayload<AddRandom>(uint32_t, const RpcEnvelope& env) {
 template<>
 const ProcessFloats& getPayload<ProcessFloats>(uint32_t, const RpcEnvelope& env) {
     return env.payload.flt;
+}
+template<>
+const BatchSendMessage& getPayload<BatchSendMessage>(uint32_t, const RpcEnvelope& env) {
+    return env.payload.batch_msg;
 }
 
 // ---------------- Template Typed Handler ----------------
@@ -126,6 +137,28 @@ void RpcServer::registerTypedHandler(uint32_t tag, std::function<void(const Req&
     });
 }
 
+// Could generalise above
+template<>
+void RpcServer::registerTypedHandler<BatchSendMessage, BatchResponse>(
+    uint32_t tag,
+    std::function<void(const BatchSendMessage&, BatchResponse*)> handler) {
+        std::printf("[Server] Registering handler for tag %u\n", tag);
+        RegisterHandler(tag, [=](uint32_t req_id, const RpcEnvelope& env) -> bool {
+            const BatchSendMessage& req = getPayload<BatchSendMessage>(tag, env);
+            BatchResponse resp{};
+            handler(req, &resp);
+
+            RpcResponse out = RpcResponse_init_zero;
+            out.request_id = req_id;
+            out.status = true;
+            out.which_payload = RpcResponse_batch_msg_tag;
+            out.payload.batch_msg = resp;
+
+            sendResponse(out, req_id);
+            return true;
+        });
+}
+
 // ---------------- Business Logic Registration ----------------
 
 void RpcServer::registerFunction(uint32_t tag, std::function<std::string(int32_t, std::string)> fn) {
@@ -148,6 +181,20 @@ void RpcServer::registerFunction(uint32_t tag, std::function<float(std::vector<f
         [=](const ProcessFloats& req, ProcessFloatsResponse* resp) {
             std::vector<float> data(req.num, req.num + req.num_count);
             resp->sum = fn(std::move(data));
+        });
+}
+
+void RpcServer::registerBatchFunction(uint32_t tag, std::function<std::string(int32_t, std::string)> fn) {
+    std::printf("[Server] Registering batch function for tag %u\n", tag);
+    registerTypedHandler<BatchSendMessage, BatchResponse>(tag,
+        [=](const BatchSendMessage& req, BatchResponse* resp) {
+            resp->responses_count = req.messages_count;
+            for (pb_size_t i = 0; i < req.messages_count; ++i) {
+                const auto& msg = req.messages[i];
+                std::string reply = fn(msg.id, msg.name);
+                std::strncpy(resp->responses[i].info, reply.c_str(), sizeof(resp->responses[i].info) - 1);
+                resp->responses[i].id = msg.id;
+            }
         });
 }
 

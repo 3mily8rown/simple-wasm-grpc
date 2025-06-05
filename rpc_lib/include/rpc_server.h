@@ -10,6 +10,10 @@
 #include "pb_encode.h"
 #include "rpc_envelope.pb.h"
 
+// rpc_server.h  (or a small new header everyone can see)
+#include <atomic>
+extern std::atomic_bool g_server_ready;
+
 extern "C" {
     int32_t receive_rpcmessage(uint32_t offset, uint32_t length);
     void    send_rpcresponse(uint32_t offset, uint32_t length, uint32_t request_id);
@@ -30,11 +34,13 @@ public:
     // For typed handlers that operate on proto messages
     template<typename Req, typename Resp>
     void registerTypedHandler(uint32_t tag, std::function<void(const Req&, Resp*)> handler);
+    void registerTypedHandler(uint32_t tag, std::function<void(const BatchSendMessage&, BatchResponse*)> handler);
 
     // Application-level native handlers (business logic only)
     void registerFunction(uint32_t tag, std::function<std::string(int32_t, std::string)> fn);  // SendMessage
     void registerFunction(uint32_t tag, std::function<int32_t(int32_t)> fn);                   // AddRandom
     void registerFunction(uint32_t tag, std::function<float(std::vector<float>)> fn);          // ProcessFloats
+    void registerBatchFunction(uint32_t tag, std::function<std::string(int32_t, std::string)> fn); // BatchSendMessage
 
 private:
     std::unordered_map<uint32_t, HandlerFn> handlers_;

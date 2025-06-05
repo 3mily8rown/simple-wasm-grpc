@@ -2,3 +2,6 @@ SendMessage.name               max_size:32
 SendMessageResponse.info       max_size:64
 
 ProcessFloats.num              max_count:16
+
+BatchSendMessage.messages      max_count:16
+BatchResponse.responses        max_count:16

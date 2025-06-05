@@ -7,6 +7,8 @@
 
 extern bool colocated;
 
+void rpc_server_ready(wasm_exec_env_t exec_env);
+
 int32_t send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset,
     uint32_t length);
 

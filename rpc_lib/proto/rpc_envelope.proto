@@ -7,6 +7,7 @@ message RpcEnvelope {
     SendMessage msg = 2;
     AddRandom rand = 3;
     ProcessFloats flt = 4;
+    BatchSendMessage batch_msg = 5;
   }
 }
 
@@ -17,9 +18,10 @@ message RpcResponse {
     SendMessageResponse msg = 2;
     AddRandomResponse rand = 3;
     ProcessFloatsResponse flt = 4;
+    BatchResponse batch_msg = 5;
   }
 
-  bool status = 5; 
+  bool status = 6; 
 }
 
 
@@ -28,6 +30,7 @@ message SendMessage {
   string name = 2;
 }
 message SendMessageResponse {
+  int32 id = 1;
   string  info = 2;
 }
 
@@ -43,4 +46,12 @@ message ProcessFloats {
 }
 message ProcessFloatsResponse {
   float sum = 1;
+}
+
+message BatchSendMessage {
+  repeated SendMessage messages = 1;
+}
+
+message BatchResponse {
+  repeated SendMessageResponse responses = 1;
 }

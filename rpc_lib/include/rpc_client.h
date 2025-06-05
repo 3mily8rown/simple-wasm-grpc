@@ -30,11 +30,9 @@ public:
     uint32_t sendMessageAsync(int32_t id, const char* name);
     bool pollSendMessageResponse(uint32_t request_id, std::string& result);
 
-    uint32_t addRandomAsync(int32_t num);
-    bool pollAddRandomResponse(uint32_t request_id, int32_t& result);
-
-    uint32_t processFloatsAsync(const float* arr, size_t count);
-    bool pollProcessFloatsResponse(uint32_t request_id, float& result);
+    // Batch methods
+    uint32_t sendMessageBatch(const std::vector<std::string>& messages);
+    bool waitForBatchResponse(uint32_t id, std::unordered_map<uint32_t, std::string>& results);
 
 private:
     struct PendingRequest {

@@ -8,6 +8,7 @@
 #include <queue>
 #include <vector>
 #include <wasm_export.h>
+#include<unistd.h>
 #include <atomic>
 
 #include "ring_buffer_rpc/rpc_messaging.h"
@@ -15,9 +16,11 @@
 #include "rpc/native_impl.h"
 #include "wamr/thread_launch.h"
 #include "rpc/request_id_utils.h"
+#include <execinfo.h>
 
 std::atomic<bool> g_local_consumer_online = false;
 std::atomic<bool> g_local_client_online = false;
+std::atomic<bool> g_server_ready = false;
 bool colocated = false;
 
 // Function prototypes for internal use
@@ -37,6 +40,11 @@ void dump_response_slots(const char* context) {
     std::cerr << "\n";
 }
 
+void rpc_server_ready(wasm_exec_env_t env) {
+    std::cerr << "[Native] rpc_server_ready called (likely from WASM)\n";
+    g_server_ready.store(true, std::memory_order_release);
+}
+
 int32_t send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length) {
     wasm_module_inst_t inst = wasm_runtime_get_module_inst(exec_env);
     uint8_t* src = static_cast<uint8_t*>(wasm_runtime_addr_app_to_native(inst, offset));
@@ -53,12 +61,18 @@ int32_t send_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t leng
     uint32_t request_id = get_thread_id();
     begin_wait_for_response(request_id);
     dump_response_slots("[send_rpcmessage] Before sending");
-    std::cout << "[Native] Sending RPC message with request_id: " << request_id << "\n";
 
     return send_rpcmessage_internal(src, length, request_id);
 }
 
 int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t max_length) {
+    if (!g_server_ready.load(std::memory_order_acquire)) {
+        std::fprintf(stderr,
+            "[WARN] blocked early receive/send\n");
+        return 0;         // or just return;  for void function
+    }
+
+    std::cerr << "[WASM-NATIVE] receive_rpcmessage called (likely from WASM) which dequeues\n";
     extern std::atomic<bool> g_local_consumer_online;
     g_local_consumer_online.store(true, std::memory_order_release);
 
@@ -69,11 +83,24 @@ int32_t receive_rpcmessage(wasm_exec_env_t exec_env, uint32_t offset, uint32_t m
         return 0;
     }
 
-    return dequeue_message_with_timeout(dest, max_length, 5000);
+    return dequeue_message_with_timeout(dest, max_length, 10000);
 }
 
 void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length, uint32_t request_id) {
-    std::cout << "[Native] Sending RPC response for request_id: " << request_id << "\n";
+    if (!g_server_ready.load(std::memory_order_acquire)) {
+        std::fprintf(stderr,
+            "[WARN] blocked early receive/send\n");
+        return;         // or just return;  for void function
+    }
+
+
+    void* callstack[10];
+    int frames = backtrace(callstack, 10);
+    char** strs = backtrace_symbols(callstack, frames);
+    std::cerr << "send_rpcresponse backtrace:\n";
+    for (int i = 0; i < frames; ++i)
+        std::cerr << strs[i] << "\n";
+    free(strs);
     wasm_module_inst_t inst = wasm_runtime_get_module_inst(exec_env);
     uint8_t* src = static_cast<uint8_t*>(wasm_runtime_addr_app_to_native(inst, offset));
 
@@ -92,6 +119,17 @@ void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length
         send_response_over_socket(src, length, request_id);
     }    
 }
+
+// void send_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t length, uint32_t request_id) {
+//     std::cerr << "[WASM-NATIVE] send_rpcresponse called (likely from WASM)\n";
+
+//     void* stack[20];
+//     int n = backtrace(stack, 20);
+//     backtrace_symbols_fd(stack, n, STDERR_FILENO);
+    
+//     std::abort(); // 💣 TEMPORARY: crash intentionally to find the source
+// }
+
 
 int32_t receive_rpcresponse(wasm_exec_env_t exec_env, uint32_t offset, uint32_t max_len) {
     extern std::atomic<bool> g_local_client_online;
@@ -128,7 +166,6 @@ int32_t send_rpcmessage_with_id(wasm_exec_env_t exec_env, uint32_t offset,
         uint32_t full_id = make_full_id(local_id, get_thread_id());
         begin_wait_for_response(full_id);
         dump_response_slots("[send_rpcmessage_with_id] Before sending");
-        std::cout << "[Native] Sending RPC message with request_id: " << full_id << "\n";
 
         return send_rpcmessage_internal(src, length, full_id);
 }
@@ -155,20 +192,17 @@ int32_t send_rpcmessage_internal(uint8_t* src, uint32_t length, uint32_t request
     std::memcpy(src, &request_id, sizeof(uint32_t));
 
     if (g_local_consumer_online.load(std::memory_order_acquire)) {
-        // printf("Local server is online, sending message...\n");
         queue_message(src, length);
     } else if (colocated) {
-        // printf("Colocated environment detected, server not ready...\n");
         queue_message(src, length);
     } else {
-        // printf("Local server is offline, sending over socket...\n");
+        printf("Local server is offline, sending over socket...\n");
         send_over_socket(src, length);
     }    
     return 0;
 }
 
 int32_t receive_rpcresponse_internal(uint8_t* dest, uint32_t max_len, uint32_t request_id) {
-    std::cout << "[Native] Waiting for response with request_id: " << request_id << "\n";
     std::vector<uint8_t> response;
 
     if (!wait_for_response(request_id, response, 10000)) {
@@ -176,17 +210,13 @@ int32_t receive_rpcresponse_internal(uint8_t* dest, uint32_t max_len, uint32_t r
         return 0;
     }
 
-    std::cout << "[Native] Received response for request_id: " << request_id << ", size: " << response.size() << "\n";
 
     {
-        std::cout << "[Native] Cleaning up response slot for request_id: " << request_id << "\n";
-        dump_response_slots("[receive_rpcresponse_internal] Before cleanup");
         std::lock_guard<std::mutex> lock(g_response_slots_mtx);
         auto it = g_response_slots.find(request_id);
         if (it != g_response_slots.end()) {
             delete it->second;
             g_response_slots.erase(it);
-            std::cout << "[receive_rpcresponse_internal] Cleaned up request_id: " << request_id << "\n";
         } else {
             std::cerr << "[receive_rpcresponse_internal] No slot found for request_id: " << request_id << "\n";
         }
