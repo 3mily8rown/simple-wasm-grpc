@@ -59,7 +59,7 @@ void socket_listener(int port, in_addr_t ip) {
         uint8_t buffer[1024];
         ssize_t n;
         while ((n = read(client_fd, buffer, sizeof(buffer))) > 0) {
-            std::cout << "[Native] Received " << n << " bytes on port " << port << "\n";
+            // std::cout << "[Native] Received " << n << " bytes on port " << port << "\n";
             if (port == message_port) {
                 queue_message(buffer, n);
                 // std::cout << "[Native] Queued message for server\n";
@@ -173,7 +173,7 @@ void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint
 }
 
 void send_response_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint16_t port) {
-    std::cout << "[Native] Sending response to " << ip << ":" << port << "\n";
+    // std::cout << "[Native] Sending response to " << ip << ":" << port << "\n";
     send_over_socket(data, length, ip, port);
 }
 

@@ -4,9 +4,28 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include "rpc_transport.h"  // Transport functions
+#include "rpc/socket_communication.h"
+
 
 #include <atomic>
 std::atomic_bool g_server_ready{false};   // definition (not just declaration)
+
+RpcServer::RpcServer() : running_(true) {
+    listener_thread_ = std::thread(&RpcServer::runRequestListener, this);
+    std::fprintf(stdout, "[rpc_server] Request listener started\n");
+}
+
+RpcServer::~RpcServer() {
+    running_ = false;
+    std::fprintf(stdout, "[rpc_server] Request listener stopped\n");
+}
+
+void RpcServer::runRequestListener() {
+    // Blocks forever handling incoming messages via socket_listener()
+    socket_listener();  // Runs blocking receive loop; assumes it internally calls ProcessNextRequest
+}
+
 
 // ---------------- Core Infrastructure ----------------
 
@@ -28,7 +47,7 @@ bool RpcServer::ProcessNextRequest() {
         return false;
     }
 
-    int32_t len = receive_rpcmessage(reinterpret_cast<uint32_t>(buf.data), buf.size);
+    int32_t len = receive_rpcmessage(buf.data, buf.size);
     if (len <= 0) {
         std::printf("[Server] No message received (timeout or error)\n");
         std::free(buf.data);
@@ -82,7 +101,7 @@ void RpcServer::sendResponse(const RpcResponse& resp, uint32_t request_id) {
     }
 
     std::memcpy(wasm_buf, tmp, len);
-    send_rpcresponse(reinterpret_cast<uint32_t>(wasm_buf), len, request_id);
+    send_rpcresponse(wasm_buf, len, request_id);
     std::free(wasm_buf);
 }
 

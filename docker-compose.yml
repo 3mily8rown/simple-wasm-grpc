@@ -2,18 +2,20 @@ services:
 
 # Individual waasm server and client processes in separate containers
   server:
-    image: ubuntu:24.04
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    # image: ubuntu:24.04
+    build:
+      context: .
+      dockerfile: Dockerfile.wasm_rpc_host
 
     container_name: server_container
     volumes:
       - ./build/native:/app
       # - ./build/wasm-prefix/src/wasm-build:/app/wasm
       - ./build/install/wasm:/app/wasm
+      - ./evaluation/scripts/measure_resources.sh:/scripts/measure_resources.sh
     working_dir: /app
-    command: ["./server_host"]
+    # command: ["./server_host"]
+    command: ["/bin/bash", "/scripts/measure_resources.sh", "./server_host"]
     networks:
       - testnet
     cap_add:
@@ -33,17 +35,19 @@ services:
 
 
   client:
-    image: ubuntu:24.04
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    # image: ubuntu:24.04
+    build:
+      context: .
+      dockerfile: Dockerfile.wasm_rpc_host
     container_name: client_container
     volumes:
       - ./build/native:/app
       # - ./build/wasm-prefix/src/wasm-build:/app/wasm
       - ./build/install/wasm:/app/wasm
+      - ./evaluation/scripts/measure_resources.sh:/scripts/measure_resources.sh
     working_dir: /app
-    command: ["./client_host"]
+    # command: ["./client_host"]
+    command: ["/bin/bash", "/scripts/measure_resources.sh", "./client_host"]
     depends_on:
       - server
     networks:
@@ -67,14 +71,21 @@ services:
 
 # wasm server and client *colocated* to use same wasm rpc host
   wasm_rpc_host:
-    image: ubuntu:24.04
+    # image: ubuntu:24.04
+    build:
+      context: .
+      dockerfile: Dockerfile.wasm_rpc_host
     container_name: wasm_rpc_host_container
     volumes:
       - ./build/native:/app
       # - ./build/wasm-prefix/src/wasm-build:/app/wasm
       - ./build/install/wasm:/app/wasm
+      - ./evaluation/scripts/measure_resources.sh:/scripts/measure_resources.sh
     working_dir: /app
-    command: ["./rpc_host"]
+    # command: ["./rpc_host"]
+    # command: ["/bin/bash", "-c", "/usr/bin/time -v ./rpc_host 2>&1 | tee /tmp/time_output.txt"]
+    # command: ["/usr/local/bin/rpc_host_wrapper.sh"]
+    command: ["/bin/bash", "/scripts/measure_resources.sh", "./rpc_host"]
     networks:
       - testnet
     cap_add:
@@ -89,14 +100,22 @@ services:
 
 
 # Wasm Server and client different processes same container - still networked so idk if this is useful
-  wasm_single_vm:
-    image: ubuntu:24.04
-    container_name: wasm_single_vm_container
+  server_client_same_vm:
+    build:
+      context: .
+      dockerfile: Dockerfile.wasm_rpc_host
+    container_name: server_client_same_vm_container
     volumes:
       - ./build/native:/app
-      - ./build/wasm-prefix/src/wasm-build:/app/wasm
+      - ./build/install/wasm:/app/wasm
+      - ./evaluation/scripts/measure_resources.sh:/scripts/measure_resources.sh
     working_dir: /app
-    command: ["/bin/bash", "-c", "./server_host & sleep 1 && ./client_host"]
+    command: >
+      /bin/bash -c "
+        /scripts/measure_resources.sh ./server_host & 
+        sleep 1 &&
+        /scripts/measure_resources.sh ./client_host
+      "
     networks:
       - testnet
     cap_add:
@@ -106,21 +125,25 @@ services:
     environment:
       - SERVER_HOST=127.0.0.1
       - CLIENT_HOST=127.0.0.1
-    cpuset: "2,3"           # Bind container to CPU core 2
-    cpu_period: 100000    # Set time period (100ms)
-    cpu_quota: 200000     # Allow 100ms of CPU time = 1 full core
-    mem_limit: 1g         # Optional: cap memory to 1 GB
+    security_opt:
+      - seccomp=unconfined
+    privileged: true
+    cpuset: "2,3"
+    cpu_period: 100000
+    cpu_quota: 200000     # 2 cores
+    mem_limit: 1g
+
 
   # Baseline C++ server and client with traffic control
   cpp_server:
     build:
-      context: ./baseline
+      context: ./baseline2
       dockerfile: Dockerfile.tc
     container_name: cpp_server_container
     volumes:
-      - ./baseline/build:/app
+      - ./baseline2/build:/app
     working_dir: /app
-    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 1ms 1ms && ./native_server_same"]
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 0ms 0ms && ./native_server"]
     networks:
       - testnet
     cap_add:
@@ -136,13 +159,13 @@ services:
 
   cpp_client:
     build:
-      context: ./baseline
+      context: ./baseline2
       dockerfile: Dockerfile.tc
     container_name: cpp_client_container
     volumes:
-      - ./baseline/build:/app
+      - ./baseline2/build:/app
     working_dir: /app
-    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 1ms 1ms && ./native_client_same"]
+    command: ["/bin/bash", "-c", "tc qdisc add dev eth0 root netem delay 0ms 0ms && ./native_client"]
     depends_on:
       - cpp_server
     networks:

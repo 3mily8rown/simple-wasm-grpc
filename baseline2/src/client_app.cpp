@@ -5,12 +5,20 @@
 #include "rpc_client.h"
 #include "rpc_envelope.pb.h"
 #include <iostream>
-#include <unordered_set>
+#include <chrono>
 
-extern "C" {
-    int64_t get_time_us();
-    void send_rtt(uint32_t time_us);
-    void send_total(uint32_t time_us, uint32_t count);
+int64_t get_time_us() {
+    using namespace std::chrono;
+    return duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+}
+void send_rtt(uint32_t time_us) {
+    // This function would send the RTT to the server or log it
+    std::cout << "[METRICS] RTT = " << time_us << "μs" << std::endl;
+}
+void send_total(uint32_t total_time_us, int count) {
+    // This function would send the total time and count to the server or log it
+    uint32_t throughput = (count > 0) ? (total_time_us / count) : 0;
+    std::cout << "[METRICS] THROUGHPUT = " << throughput << "μs" << std::endl;
 }
 
 // main function implemenations for evaluation purposes
@@ -46,6 +54,7 @@ int send_x_messages_no_rtt(int count) {
             return 1;
         }
     }
+
     send_total(static_cast<uint32_t>(get_time_us() - initial_time), count);
     return 0;
 }
@@ -137,10 +146,12 @@ int send_async_messages(int count) {
         }
         std::string result;
         
-        while (!client.pollSendMessageResponse(id, result)) {
-            // Polling for response, could add a timeout or sleep here
+        if (client.pollSendMessageResponse(id, result)) {
+            break;
         }
             
+        
+        fflush(stdout);
         int64_t t1 = get_time_us();
         send_rtt(static_cast<uint32_t>(t1 - t0));
     }
@@ -148,49 +159,6 @@ int send_async_messages(int count) {
     send_total(static_cast<uint32_t>(get_time_us() - initial_time), count);
     return 0;
 }
-
-int send_async_messages_test(int count) {
-    RpcClient client;
-    // std::unordered_map<uint32_t, int64_t> start_times;
-    std::unordered_set<uint32_t> pending_ids;
-
-    int64_t start_time = get_time_us();
-
-    // 1. Send all messages
-    for (int i = 0; i < count; ++i) {
-        std::string msg = "hello from client " + std::to_string(i);
-        uint32_t id = client.sendMessageAsync(i, msg.c_str());
-        if (id == 0) {
-            std::fprintf(stderr, "Failed to send message\n");
-            return 1;
-        }
-        // start_times[id] = get_time_us();
-        pending_ids.insert(id);
-    }
-
-    // 2. Poll until all responses received
-    std::string result;
-    while (!pending_ids.empty()) {
-        std::vector<uint32_t> completed;
-
-        for (uint32_t id : pending_ids) {
-            if (client.pollSendMessageResponse(id, result)) {
-                // int64_t end_time = get_time_us();
-                // send_rtt(static_cast<uint32_t>(end_time - start_times[id]));
-                completed.push_back(id);
-            }
-        }
-
-        for (uint32_t id : completed) {
-            pending_ids.erase(id);
-        }
-    }
-
-    int64_t total_time = get_time_us() - start_time;
-    send_total(static_cast<uint32_t>(total_time), count);
-    return 0;
-}
-
 
 int send_batch_messages(int count) {
     RpcClient client;
@@ -226,18 +194,10 @@ int send_batch_messages(int count) {
     return 0;
 }
 
-
-
 int main() {
-    // resources test
-    // send_x_messages_no_rtt(10000);
-
-    // round trip time tests
+    send_x_messages_no_rtt(10000);
     // send_x_messages(10000);
-
-    // asynchronous message tests
-    send_async_messages_test(10000);
-
+    // send_async_messages(1);
     // send_batch_messages(3);
     // send_add_random(5);
     // send_process_floats(5);

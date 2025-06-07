@@ -8,16 +8,24 @@ Samples: 10000
 Mean RTT: 21.91 μs
 Std Dev: 5.37 μs
 
---- TCP ---
+--- TCP-WASM ---
 Samples: 10000
 Mean RTT: 465.65 μs
 Std Dev: 143.54 μs
+
+--- TCP-NATIVE ---
+Samples: 10000
+Mean RTT: 505.75 μs
+Std Dev: 158.98 μs
 """
 
 # === CONFIG ===
 FILE_INFO = [
-    ("round_trip_log_colocated_multiple_msg.csv", "colocated"),
-    ("round_trip_log_multiple_msg.csv", "tcp")
+    ("round_trip_log_colocated_multiple_msg.csv", "colocated-wasm"),
+    ("round_trip_log_grpc.csv", "grpc-cpp"),
+    ("round_trip_log_multiple_msg.csv", "tcp-wasm"),
+    ("round_trip_log_native.csv", "tcp-cpp") ,
+    ("round_trip_log_same_vm_multiple_msg.csv", "tcp-wasm single-container") ,
 ]
 SAVE_PLOTS = True
 SHOW_PLOTS = True
@@ -59,21 +67,23 @@ plt.xlabel("Round-trip latency (μs)")
 plt.ylabel("Frequency")
 plt.legend()
 
-if SAVE_PLOTS:
-    plt.savefig("plots/comparison_histogram_log_rtt.png", dpi=150)
-if SHOW_PLOTS:
-    plt.show()
+plt.savefig("plots/grpc_comparison_histogram_log_rtt.png", dpi=150)
+
 
 
 # === TIME SERIES ===
 plt.figure(figsize=(10, 6))
 plt.yscale("log")
+
 for mode, data in latencies_by_mode.items():
-    downsampled = data.iloc[::DOWNSAMPLE_FACTOR]
-    plt.plot(downsampled.values, label=f"{mode} (1/{DOWNSAMPLE_FACTOR})", marker=None, linewidth=1)
-plt.title("RTT Time Series (Downsampled)")
+    clean_data = data.dropna()
+    clean_data = clean_data[clean_data > 0]  # remove RTTs ≤ 0
+    downsampled = clean_data.iloc[::DOWNSAMPLE_FACTOR]
+    # plt.plot(clean_data, label=f"{mode}", marker=None, linewidth=1)
+    plt.plot(downsampled, label=f"{mode} (1/{DOWNSAMPLE_FACTOR})", marker=None, linewidth=1)
+plt.title("RTT Time Series (μs) (Downsampled by 10x)")
 plt.xlabel("Sample Index")
 plt.ylabel("RTT (μs)")
 plt.legend()
-if SAVE_PLOTS: plt.savefig("plots/comparison_log_timeseries_rtt.png", dpi=150)
+if SAVE_PLOTS: plt.savefig("plots/grpc_comparison_log_timeseries_rtt.png", dpi=150)
 # if SHOW_PLOTS: plt.show()

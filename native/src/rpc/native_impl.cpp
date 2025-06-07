@@ -237,6 +237,7 @@ void send_rtt(wasm_exec_env_t exec_env, uint32_t time_us) {
 }
 
 void send_total(wasm_exec_env_t exec_env, uint32_t time_us, uint32_t count) {
+    std::cout << "[METRICS] TOTAL TIME = " << time_us << "μs" << std::endl;
     uint32_t throughput = (count > 0) ? (time_us / count) : 0;
     std::cout << "[METRICS] THROUGHPUT = " << throughput << "μs" << std::endl;
 }

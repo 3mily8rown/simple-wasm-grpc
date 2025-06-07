@@ -28,7 +28,7 @@ void socket_response_listener(int port = response_port, in_addr_t ip = INADDR_NO
 void send_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint16_t port = message_port);
 void send_response_over_socket(const uint8_t* data, uint32_t length, const char* ip, uint16_t port = response_port);
 
-// Convenience overloads (optional):
-void send_over_socket(const uint8_t* data, uint32_t length); // default to get_client_ip()
-void send_response_over_socket(const uint8_t* data, uint32_t length, uint32_t request_id); // default to get_server_ip()
+// Convenience overloads:
+void send_over_socket(const uint8_t* data, uint32_t length); 
+void send_response_over_socket(const uint8_t* data, uint32_t length, uint32_t request_id);
 

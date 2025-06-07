@@ -21,66 +21,30 @@ set(VENV_PYTHON "${VENV_DIR}/bin/python")
 set(VENV_CREATED_MARKER "${VENV_DIR}/.created")
 
 # Only create the venv + install protobuf once
-# add_custom_command(
-#   OUTPUT "${VENV_CREATED_MARKER}"
-#   COMMAND python3 -m venv "${VENV_DIR}"
-#   COMMAND "${VENV_PYTHON}" -m pip install --upgrade pip
-#   # COMMAND "${VENV_PYTHON}" -m pip install protobuf==3.20.3
-#   COMMAND "${VENV_PYTHON}" -m pip install protobuf==4.23.4
-#   COMMAND ${CMAKE_COMMAND} -E touch "${VENV_CREATED_MARKER}"
-#   COMMENT "Creating temporary virtual environment and installing protobuf==3.20.3"
-# )
 add_custom_command(
   OUTPUT "${VENV_CREATED_MARKER}"
   COMMAND python3 -m venv "${VENV_DIR}"
   COMMAND "${VENV_PYTHON}" -m pip install --upgrade pip
-  COMMAND env CC=/usr/bin/clang CXX=/usr/bin/clang++ "${VENV_PYTHON}" -m pip install --no-binary=protobuf protobuf==3.20.3 grpcio-tools
-  # Regenerate nanopb_pb2.py inside the correct protobuf runtime
-  COMMAND "${VENV_PYTHON}" -m grpc_tools.protoc
-          --proto_path="${nanopb_SOURCE_DIR}/generator/proto"
-          --python_out="${nanopb_SOURCE_DIR}/generator/proto"
-          "${nanopb_SOURCE_DIR}/generator/proto/nanopb.proto"
+  COMMAND "${VENV_PYTHON}" -m pip install protobuf==3.20.3
   COMMAND ${CMAKE_COMMAND} -E touch "${VENV_CREATED_MARKER}"
-  COMMENT "Creating venv, installing protobuf from source, and regenerating nanopb_pb2.py"
+  COMMENT "Creating temporary virtual environment and installing protobuf==3.20.3"
 )
-
-
 
 add_custom_target(nano_venv DEPENDS "${VENV_CREATED_MARKER}")
 
 # Path to your .proto files
 set(PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
 
-find_program(SYSTEM_PROTOC
-  NAMES protoc
-  PATHS "/home/eb/fyp/protobuf-older/protobuf/build"
-  NO_DEFAULT_PATH
-)
-message(STATUS "Using protoc: ${SYSTEM_PROTOC}")
-
+find_program(SYSTEM_PROTOC protoc)
 if(NOT SYSTEM_PROTOC)
   message(FATAL_ERROR "protoc not found; please install protobuf-compiler")
 endif()
-
-# # Wrapper script so protoc finds the generator in the venv
-# set(WRAP "${CMAKE_BINARY_DIR}/protoc-gen-nanopb")
-# file(WRITE  "${WRAP}"
-#   "#!/usr/bin/env bash\nexec \"${VENV}/bin/python\" \"${nanopb_SOURCE_DIR}/generator/nanopb_generator.py\" --protoc-plugin \"$@\"")
-# file(CHMOD "${WRAP}" PERMISSIONS
-#      OWNER_READ OWNER_WRITE OWNER_EXECUTE
-#      GROUP_READ GROUP_EXECUTE
-#      WORLD_READ WORLD_EXECUTE)
+ 
 set(WRAP "${CMAKE_BINARY_DIR}/protoc-gen-nanopb")
 file(WRITE "${WRAP}"
   "#!/usr/bin/env bash\n"
-  "echo Using Python: ${VENV_PYTHON} >&2\n"
   "exec \"${VENV_PYTHON}\" \"${nanopb_SOURCE_DIR}/generator/nanopb_generator.py\" --protoc-plugin \"$@\""
 )
-
-# file(WRITE "${WRAP}"
-#   "#!/usr/bin/env bash\n"
-#   "exec \"${VENV_PYTHON}\" \"${nanopb_SOURCE_DIR}/generator/nanopb_generator.py\" --protoc-plugin \"$@\""
-# )
 file(CHMOD "${WRAP}" PERMISSIONS
   OWNER_READ OWNER_WRITE OWNER_EXECUTE
   GROUP_READ GROUP_EXECUTE
@@ -115,18 +79,27 @@ add_custom_target(generate_protos
 
 # -------------------------------
 
-# 2) Build the RPC library
-# add_library(rpc_lib STATIC
-#   # your implementation
-#   src/rpc_client.cpp
-#   src/rpc_server.cpp
 
-#   # the pregenerated envelope/response stubs
-#   src/generated_nano/rpc_envelope.pb.c
-# )
+# ——— Shared RPC primitives (client, server, socket, queue) ———
+set(RPC_PRIMITIVES_SRCS
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../native/src/rpc/socket_communication.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../native/src/ring_buffer_rpc/rpc_messaging.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../native/src/ring_buffer_rpc/ring_buffer.cpp
+)
+
+add_library(rpc_primitives STATIC ${RPC_PRIMITIVES_SRCS})
+target_include_directories(rpc_primitives
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../native/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/rpc_lib>  # Or a more accurate destination
+)
+
+
 add_library(rpc_lib STATIC
   src/rpc_client.cpp
   src/rpc_server.cpp
+  src/rpc_transport.cpp
   "${GEN}/rpc_envelope.pb.c"
 )
 
@@ -139,20 +112,16 @@ target_include_directories(rpc_lib
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     # $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/generated_nano>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated_nano>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../native/include>  
     $<INSTALL_INTERFACE:include/rpc_lib>
 
 )
 
 # 4) Link in nanopb runtime
-target_link_libraries(rpc_lib PUBLIC nanopb::nanopb)
+target_link_libraries(rpc_lib PUBLIC nanopb::nanopb rpc_primitives)
 
-# 5) Force WASI flags (assuming you pass in your toolchain file at configure)
-target_compile_options(rpc_lib
-  PUBLIC
-    --target=wasm32-wasi
-    -fno-exceptions
-    -fno-rtti
-)
+
+
 set_target_properties(rpc_lib PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER "include/rpc_client.h;include/rpc_server.h"
@@ -167,9 +136,14 @@ install(TARGETS rpc_lib
 )
 
 install(
-  DIRECTORY "${CMAKE_BINARY_DIR}/generated_nano/"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/rpc_lib"
+  DIRECTORY include/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rpc_lib
   FILES_MATCHING PATTERN "*.h"
+)
+
+install(TARGETS rpc_primitives
+  EXPORT rpcLibTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 

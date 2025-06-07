@@ -7,5 +7,8 @@ TODO
 native/src/CMakeListsArchive
 third_party
 baseline/build
+baseline2/build
+baseline2/rpc_lib/build
 rpc_lib/build
-data/localVsRemote/*.csv
+data/sync/rtt/*.csv
+data/sync/resources/*.csv
